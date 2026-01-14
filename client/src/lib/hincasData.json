@@ -7,49 +7,49 @@
         {
           "id": "2R_EXT_162",
           "name": "2R_EXT_162",
-          "color": "#ef4444",
+          "color": "#E63946",
           "distances": [7.5, 7.5, 8.1, 8.1, 7.9, 9.3, 8.05, 8.05, 8.05, 8.5, 8.5],
           "totalDistance": 89.55
         },
         {
           "id": "2R_MED1PN_162",
           "name": "2R_MED1PN_162",
-          "color": "#f59e0b",
+          "color": "#F77F00",
           "distances": [9.15, 9.15, 10.4, 10.4, 10.25, 10.5, 10.3, 9.25, 9.25],
           "totalDistance": 88.65
         },
         {
           "id": "2R_MED1PS_162",
           "name": "2R_MED1PS_162",
-          "color": "#10b981",
+          "color": "#457B9D",
           "distances": [9.25, 9.25, 10.3, 10.3, 10.45, 10.4, 10.4, 9.15, 9.15],
           "totalDistance": 88.65
         },
         {
           "id": "2R_INT1PN_162",
           "name": "2R_INT1PN_162",
-          "color": "#059669",
+          "color": "#6B8E99",
           "distances": [9.15, 9.15, 10.4, 10.4, 10.2, 10.5, 10.3, 9.25, 9.25],
           "totalDistance": 88.6
         },
         {
           "id": "2R_INT1PS_162",
           "name": "2R_INT1PS_162",
-          "color": "#06b6d4",
+          "color": "#2D6A4F",
           "distances": [9.25, 9.25, 10.3, 10.3, 10.45, 10.4, 10.4, 9.15, 9.15],
           "totalDistance": 88.65
         },
         {
           "id": "2R_MED2P_162",
           "name": "2R_MED2P_162",
-          "color": "#eab308",
+          "color": "#7209B7",
           "distances": [9.25, 9.25, 10.3, 10.3, 10.45, 10.4, 10.4, 9.15, 9.15],
           "totalDistance": 88.65
         },
         {
           "id": "2R_INT2P_162",
           "name": "2R_INT2P_162",
-          "color": "#a855f7",
+          "color": "#7209B7",
           "distances": [9.25, 9.25, 10.3, 10.3, 10.45, 10.4, 10.4, 9.15, 9.15],
           "totalDistance": 88.65
         }
@@ -62,49 +62,56 @@
         {
           "id": "2R_EXT_108",
           "name": "2R_EXT_108",
-          "color": "#ef4444",
+          "color": "#A4161A",
           "distances": [7.9, 9.3, 8.05, 8.05, 8.05, 8.05, 8.05],
+          "totalDistance": 57.45
+        },
+        {
+          "id": "2R_INT_108",
+          "name": "2R_INT_108",
+          "color": "#6B8E99",
+          "distances": [9.15, 9.15, 10.4, 10.4, 9.05, 9.3],
           "totalDistance": 57.45
         },
         {
           "id": "2R_MED1PN_108",
           "name": "2R_MED1PN_108",
-          "color": "#f59e0b",
+          "color": "#8B6F47",
           "distances": [9.15, 9.15, 10.4, 10.4, 9.05, 9.3],
           "totalDistance": 57.45
         },
         {
           "id": "2R_MED1PS_108",
           "name": "2R_MED1PS_108",
-          "color": "#10b981",
+          "color": "#F4D35E",
           "distances": [9.1, 9.25, 10.4, 10.44, 9.15, 9.15],
           "totalDistance": 57.49
         },
         {
           "id": "2R_INT1PN_108",
           "name": "2R_INT1PN_108",
-          "color": "#059669",
+          "color": "#52B788",
           "distances": [9.15, 9.15, 10.4, 10.4, 9.05, 9.3],
           "totalDistance": 57.45
         },
         {
           "id": "2R_INT1PS_108",
           "name": "2R_INT1PS_108",
-          "color": "#06b6d4",
+          "color": "#4ECDC4",
           "distances": [9.1, 9.25, 10.4, 10.4, 9.15, 9.15],
           "totalDistance": 57.45
         },
         {
           "id": "2R_MED2P_108",
           "name": "2R_MED2P_108",
-          "color": "#eab308",
+          "color": "#7209B7",
           "distances": [9.1, 9.25, 10.4, 10.4, 9.15, 9.15],
           "totalDistance": 57.45
         },
         {
           "id": "2R_INT2P_108",
           "name": "2R_INT2P_108",
-          "color": "#a855f7",
+          "color": "#7209B7",
           "distances": [9.1, 9.25, 10.4, 10.4, 9.15, 9.15],
           "totalDistance": 57.45
         }
@@ -117,35 +124,49 @@
         {
           "id": "2R_EXT_54",
           "name": "2R_EXT_54",
-          "color": "#ef4444",
+          "color": "#FF8C42",
           "distances": [8.2, 6.9, 6.9, 6.9],
           "totalDistance": 28.9
         },
         {
           "id": "2R_INT_54",
           "name": "2R_INT_54",
-          "color": "#1f2937",
+          "color": "#FFD60A",
           "distances": [10.3, 9.3, 9.3],
           "totalDistance": 28.9
         },
         {
           "id": "2R_MED1PN_54",
           "name": "2R_MED1PN_54",
-          "color": "#f59e0b",
+          "color": "#FFC300",
           "distances": [9.3, 9.3, 10.1],
           "totalDistance": 28.7
         },
         {
           "id": "2R_MED1PS_54",
           "name": "2R_MED1PS_54",
-          "color": "#10b981",
+          "color": "#5C4033",
+          "distances": [10.3, 9.3, 9.3],
+          "totalDistance": 28.9
+        },
+        {
+          "id": "2R_INT1PN_54",
+          "name": "2R_INT1PN_54",
+          "color": "#2D6A4F",
+          "distances": [10.3, 9.3, 9.3],
+          "totalDistance": 28.9
+        },
+        {
+          "id": "2R_INT1PS_54",
+          "name": "2R_INT1PS_54",
+          "color": "#52B788",
           "distances": [10.3, 9.3, 9.3],
           "totalDistance": 28.9
         },
         {
           "id": "2R_MED2P_54",
           "name": "2R_MED2P_54",
-          "color": "#eab308",
+          "color": "#7209B7",
           "distances": [10.3, 9.3, 9.3],
           "totalDistance": 28.9
         }
