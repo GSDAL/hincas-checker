@@ -3,7 +3,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle2, XCircle, AlertCircle, Trash2, Download } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, Trash2, Download, FileDown, CheckSquare2 } from 'lucide-react';
+import jsPDF from 'jspdf';
 import hincasData from '@/lib/hincasData.json';
 
 interface ValidationResult {
@@ -46,6 +47,9 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
   const [exportFilter, setExportFilter] = useState<'all' | 'valid' | 'invalid'>('all');
   const [csvContent, setCsvContent] = useState<string>('');
   const [showCsvPreview, setShowCsvPreview] = useState(false);
+  const [selectedRecords, setSelectedRecords] = useState<Set<string>>(new Set());
+  const [showPdfPreview, setShowPdfPreview] = useState(false);
+  const [configColor, setConfigColor] = useState<string>('#000000');
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -85,6 +89,13 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
   const handleConfigChange = (configId: string) => {
     setSelectedConfig(configId);
     setMeasurements([]);
+    const stage = hincasData.stages.find(s => s.id === selectedStage);
+    if (stage) {
+      const config = stage.configurations.find(c => c.id === configId);
+      if (config) {
+        setConfigColor(config.color || '#000000');
+      }
+    }
   };
 
   const handleMeasurementChange = (index: number, value: string) => {
@@ -150,6 +161,69 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
     if (onValidationComplete) {
       onValidationComplete(validationResults);
     }
+  };
+
+
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    const selectedList = Array.from(selectedRecords);
+    const recordsToExport = selectedList.length > 0 
+      ? history.filter(h => selectedList.includes(h.id))
+      : history;
+
+    let yPosition = 10;
+    doc.setFontSize(16);
+    doc.text('Histórico de Validaciones de Hincas', 10, yPosition);
+    yPosition += 10;
+
+    doc.setFontSize(10);
+    recordsToExport.forEach((record, idx) => {
+      if (yPosition > 280) {
+        doc.addPage();
+        yPosition = 10;
+      }
+
+      // Header
+      doc.setFillColor(200, 200, 200);
+      doc.rect(10, yPosition, 190, 8, 'F');
+      doc.text(`Registro ${idx + 1} - ${record.timestamp}`, 12, yPosition + 6);
+      yPosition += 10;
+
+      // Datos
+      doc.text(`Stage: ${record.stage}`, 12, yPosition);
+      yPosition += 6;
+      doc.text(`Configuración: ${record.configuration}`, 12, yPosition);
+      yPosition += 6;
+      doc.text(`Estado: ${record.totalValidation.isValid ? '✓ Válido' : '✗ Inválido'}`, 12, yPosition);
+      yPosition += 6;
+
+      // Mediciones
+      doc.text('Mediciones:', 12, yPosition);
+      yPosition += 5;
+      record.measurements.forEach((m, i) => {
+        const expected = record.results[i]?.expected || 0;
+        const diff = record.results[i]?.difference || 0;
+        doc.setTextColor(diff <= 0.04 && diff >= -0.04 ? 0 : 255, 0, 0);
+        doc.text(`  Hinc ${i + 1}: ${expected.toFixed(4)} → ${m.toFixed(4)} | ${diff >= 0 ? '+' : ''}${diff.toFixed(4)}`, 12, yPosition);
+        doc.setTextColor(0, 0, 0);
+        yPosition += 5;
+      });
+
+      // Total
+      doc.text(`Total: ${record.totalValidation.expected.toFixed(4)} → ${record.total.toFixed(4)} | ${record.totalValidation.difference >= 0 ? '+' : ''}${record.totalValidation.difference.toFixed(4)}`, 12, yPosition);
+      yPosition += 8;
+
+      if (record.description) {
+        doc.text(`Descripción: ${record.description}`, 12, yPosition);
+        yPosition += 6;
+      }
+
+      yPosition += 2;
+    });
+
+    doc.save(`hincas_history_${new Date().toISOString().split('T')[0]}.pdf`);
+    setSelectedRecords(new Set());
+    setShowExportDialog(false);
   };
 
   const handleSaveToHistory = () => {
@@ -259,10 +333,10 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
                 <div className="mb-4 flex gap-2">
                   <Button
                     onClick={() => setShowExportDialog(true)}
-                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
                   >
-                    <Download className="w-4 h-4" />
-                    Exportar CSV
+                    <FileDown className="w-4 h-4" />
+                    Exportar PDF
                   </Button>
                   <Button
                     onClick={() => {
@@ -388,6 +462,15 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                {/* Color Indicator */}
+                <div className="mb-6 flex items-center gap-3 p-3 rounded border-2" style={{ borderColor: configColor, backgroundColor: configColor + '15' }}>
+                  <div
+                    className="w-8 h-8 rounded border-2 border-white shadow-sm"
+                    style={{ backgroundColor: configColor }}
+                  />
+                  <span className="text-sm font-medium text-slate-700">{selectedConfig}</span>
                 </div>
 
                 <div className="border-t border-slate-200 pt-6">
@@ -690,50 +773,54 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
         {/* Export Dialog */}
         {showExportDialog && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
-              <h2 className="text-xl font-bold text-slate-900 mb-4">Exportar Histórico</h2>
+            <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full p-6 max-h-96 flex flex-col">
+              <h2 className="text-xl font-bold text-slate-900 mb-4">Exportar Histórico a PDF</h2>
               
-              <div className="space-y-4 mb-6">
+              <div className="space-y-4 mb-6 flex-1 overflow-y-auto">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Selecciona qué exportar:</label>
-                  <div className="space-y-2">
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="exportFilter"
-                        value="all"
-                        checked={exportFilter === 'all'}
-                        onChange={(e) => setExportFilter(e.target.value as 'all' | 'valid' | 'invalid')}
-                        className="mr-2"
-                      />
-                      <span className="text-slate-700">Todos los registros ({history.length})</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="exportFilter"
-                        value="valid"
-                        checked={exportFilter === 'valid'}
-                        onChange={(e) => setExportFilter(e.target.value as 'all' | 'valid' | 'invalid')}
-                        className="mr-2"
-                      />
-                      <span className="text-slate-700">Solo válidos ({history.filter(e => e.results.every(r => r.isValid) && e.totalValidation.isValid).length})</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="exportFilter"
-                        value="invalid"
-                        checked={exportFilter === 'invalid'}
-                        onChange={(e) => setExportFilter(e.target.value as 'all' | 'valid' | 'invalid')}
-                        className="mr-2"
-                      />
-                      <span className="text-slate-700">Solo inválidos ({history.filter(e => !(e.results.every(r => r.isValid) && e.totalValidation.isValid)).length})</span>
-                    </label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Selecciona registros para exportar:</label>
+                  <div className="space-y-2 border border-slate-200 rounded p-3 max-h-48 overflow-y-auto">
+                    {history.map((record) => (
+                      <label key={record.id} className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-2 rounded">
+                        <input
+                          type="checkbox"
+                          checked={selectedRecords.has(record.id)}
+                          onChange={(e) => {
+                            const newSelected = new Set(selectedRecords);
+                            if (e.target.checked) {
+                              newSelected.add(record.id);
+                            } else {
+                              newSelected.delete(record.id);
+                            }
+                            setSelectedRecords(newSelected);
+                          }}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-sm text-slate-700">
+                          {record.timestamp} - {record.configuration} ({record.totalValidation.isValid ? '✓' : '✗'})
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="mt-2 flex gap-2">
+                    <Button
+                      onClick={() => setSelectedRecords(new Set(history.map(h => h.id)))}
+                      variant="outline"
+                      className="text-xs"
+                    >
+                      Seleccionar Todo
+                    </Button>
+                    <Button
+                      onClick={() => setSelectedRecords(new Set())}
+                      variant="outline"
+                      className="text-xs"
+                    >
+                      Deseleccionar Todo
+                    </Button>
                   </div>
                 </div>
               </div>
-
+              
               <div className="flex gap-2 justify-end">
                 <Button
                   onClick={() => setShowExportDialog(false)}
@@ -743,10 +830,11 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
                   Cancelar
                 </Button>
                 <Button
-                  onClick={handleExportCSV}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white"
+                  onClick={generatePDF}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
                 >
-                  Descargar CSV
+                  <FileDown className="w-4 h-4" />
+                  Descargar PDF
                 </Button>
               </div>
             </div>
