@@ -457,7 +457,13 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
                     <SelectContent>
                       {currentStage?.configurations.map(config => (
                         <SelectItem key={config.id} value={config.id}>
-                          {config.name}
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full border border-slate-300"
+                              style={{ backgroundColor: config.color }}
+                            />
+                            {config.name}
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
