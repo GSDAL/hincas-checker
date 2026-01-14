@@ -1,0 +1,140 @@
+{
+  "stages": [
+    {
+      "id": "162M",
+      "name": "AxoneDuo Infinity 162M",
+      "configurations": [
+        {
+          "id": "2R_EXT_162",
+          "name": "2R_EXT_162",
+          "distances": [7.5, 7.5, 8.1, 8.1, 7.9, 9.3, 8.05, 8.05, 8.05, 8.5, 8.5],
+          "totalDistance": 89.55
+        },
+        {
+          "id": "2R_MED1PN_162",
+          "name": "2R_MED1PN_162",
+          "distances": [9.15, 9.15, 10.4, 10.4, 10.25, 10.5, 10.3, 9.25, 9.25],
+          "totalDistance": 88.65
+        },
+        {
+          "id": "2R_MED1PS_162",
+          "name": "2R_MED1PS_162",
+          "distances": [9.25, 9.25, 10.3, 10.3, 10.45, 10.4, 10.4, 9.15, 9.15],
+          "totalDistance": 88.65
+        },
+        {
+          "id": "2R_INT1PN_162",
+          "name": "2R_INT1PN_162",
+          "distances": [9.15, 9.15, 10.4, 10.4, 10.2, 10.5, 10.3, 9.25, 9.25],
+          "totalDistance": 88.6
+        },
+        {
+          "id": "2R_INT1PS_162",
+          "name": "2R_INT1PS_162",
+          "distances": [9.25, 9.25, 10.3, 10.3, 10.45, 10.4, 10.4, 9.15, 9.15],
+          "totalDistance": 88.65
+        },
+        {
+          "id": "2R_MED2P_162",
+          "name": "2R_MED2P_162",
+          "distances": [9.25, 9.25, 10.3, 10.3, 10.45, 10.4, 10.4, 9.15, 9.15],
+          "totalDistance": 88.65
+        },
+        {
+          "id": "2R_INT2P_162",
+          "name": "2R_INT2P_162",
+          "distances": [9.25, 9.25, 10.3, 10.3, 10.45, 10.4, 10.4, 9.15, 9.15],
+          "totalDistance": 88.65
+        }
+      ]
+    },
+    {
+      "id": "108M",
+      "name": "AxoneDuo Infinity 108M",
+      "configurations": [
+        {
+          "id": "2R_EXT_108",
+          "name": "2R_EXT_108",
+          "distances": [7.9, 9.3, 8.05, 8.05, 8.05, 8.05, 8.05],
+          "totalDistance": 57.45
+        },
+        {
+          "id": "2R_MED1PN_108",
+          "name": "2R_MED1PN_108",
+          "distances": [9.15, 9.15, 10.4, 10.4, 9.05, 9.3],
+          "totalDistance": 57.45
+        },
+        {
+          "id": "2R_MED1PS_108",
+          "name": "2R_MED1PS_108",
+          "distances": [9.1, 9.25, 10.4, 10.44, 9.15, 9.15],
+          "totalDistance": 57.49
+        },
+        {
+          "id": "2R_INT1PN_108",
+          "name": "2R_INT1PN_108",
+          "distances": [9.15, 9.15, 10.4, 10.4, 9.05, 9.3],
+          "totalDistance": 57.45
+        },
+        {
+          "id": "2R_INT1PS_108",
+          "name": "2R_INT1PS_108",
+          "distances": [9.1, 9.25, 10.4, 10.4, 9.15, 9.15],
+          "totalDistance": 57.45
+        },
+        {
+          "id": "2R_MED2P_108",
+          "name": "2R_MED2P_108",
+          "distances": [9.1, 9.25, 10.4, 10.4, 9.15, 9.15],
+          "totalDistance": 57.45
+        },
+        {
+          "id": "2R_INT2P_108",
+          "name": "2R_INT2P_108",
+          "distances": [9.1, 9.25, 10.4, 10.4, 9.15, 9.15],
+          "totalDistance": 57.45
+        }
+      ]
+    },
+    {
+      "id": "54M",
+      "name": "AxoneDuo Infinity 54M",
+      "configurations": [
+        {
+          "id": "2R_EXT_54",
+          "name": "2R_EXT_54",
+          "distances": [8.2, 6.9, 6.9, 6.9],
+          "totalDistance": 28.9
+        },
+        {
+          "id": "2R_INT_54",
+          "name": "2R_INT_54",
+          "distances": [10.3, 9.3, 9.3],
+          "totalDistance": 28.9
+        },
+        {
+          "id": "2R_MED1PN_54",
+          "name": "2R_MED1PN_54",
+          "distances": [9.3, 9.3, 10.1],
+          "totalDistance": 28.7
+        },
+        {
+          "id": "2R_MED1PS_54",
+          "name": "2R_MED1PS_54",
+          "distances": [10.3, 9.3, 9.3],
+          "totalDistance": 28.9
+        },
+        {
+          "id": "2R_MED2P_54",
+          "name": "2R_MED2P_54",
+          "distances": [10.3, 9.3, 9.3],
+          "totalDistance": 28.9
+        }
+      ]
+    }
+  ],
+  "tolerance": {
+    "individual": 0.4,
+    "total": 0.4
+  }
+}
