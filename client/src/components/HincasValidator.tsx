@@ -135,7 +135,8 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
 
   const allValid = validationResults.length > 0 && 
                    validationResults.every(r => r.isValid) &&
-                   (totalValidation === null || totalValidation.isValid);
+                   totalValidation !== null &&
+                   totalValidation.isValid;
 
   const handleValidate = () => {
     if (onValidationComplete) {
@@ -181,6 +182,10 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
         const difference = entry.results[i]?.difference?.toFixed(4) || '';
         return `${expected}→${measured}(${difference})`;
       });
+      
+      // Validación estricta: todas las mediciones deben ser válidas Y el total debe ser válido
+      const isCompletelyValid = entry.results.every(r => r.isValid) && entry.totalValidation.isValid;
+      
       return [
         entry.timestamp,
         entry.stage,
@@ -189,7 +194,7 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
         entry.total.toFixed(4),
         entry.totalValidation.expected.toFixed(4),
         entry.totalValidation.difference.toFixed(4),
-        entry.totalValidation.isValid ? 'Válido' : 'Inválido',
+        isCompletelyValid ? 'Válido' : 'Inválido',
         entry.description ? `"${entry.description}"` : ''
       ].join(',');
     });
@@ -204,6 +209,7 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -279,11 +285,11 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
                         </div>
                         <div className="flex gap-2">
                           <span className={`text-xs font-semibold px-2 py-1 rounded ${
-                            entry.totalValidation.isValid
+                            entry.results.every(r => r.isValid) && entry.totalValidation.isValid
                               ? 'bg-green-200 text-green-800'
                               : 'bg-red-200 text-red-800'
                           }`}>
-                            {entry.totalValidation.isValid ? 'Válido' : 'Inválido'}
+                            {entry.results.every(r => r.isValid) && entry.totalValidation.isValid ? 'Válido' : 'Inválido'}
                           </span>
                           <Button
                             onClick={() => handleDeleteHistoryEntry(entry.id)}
