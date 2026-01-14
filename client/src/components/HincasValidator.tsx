@@ -1,11 +1,12 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CheckCircle2, XCircle, AlertCircle, Trash2, Download, FileDown, CheckSquare2 } from 'lucide-react';
+import { Link } from 'wouter';
 import jsPDF from 'jspdf';
-import hincasData from '@/lib/hincasData.json';
+import defaultHincasData from '@/lib/hincasData.json';
 
 interface ValidationResult {
   index: number;
@@ -37,6 +38,7 @@ interface HincasValidatorProps {
 }
 
 export default function HincasValidator({ onValidationComplete }: HincasValidatorProps) {
+  const [hincasData, setHincasData] = useState(defaultHincasData);
   const [selectedStage, setSelectedStage] = useState<string>('162M');
   const [selectedConfig, setSelectedConfig] = useState<string>('2R_EXT_162');
   const [measurements, setMeasurements] = useState<(number | null)[]>([]);
@@ -51,8 +53,17 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
   const [showPdfPreview, setShowPdfPreview] = useState(false);
   const [configColor, setConfigColor] = useState<string>('#000000');
 
-  // Load history from localStorage on mount
+  // Load data from localStorage on mount
   useEffect(() => {
+    const savedData = localStorage.getItem('hincasData');
+    if (savedData) {
+      try {
+        setHincasData(JSON.parse(savedData));
+      } catch (e) {
+        console.error('Error loading data:', e);
+      }
+    }
+
     const savedHistory = localStorage.getItem('hincasHistory');
     if (savedHistory) {
       try {
@@ -68,8 +79,8 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
     localStorage.setItem('hincasHistory', JSON.stringify(history));
   }, [history]);
 
-  const currentStage = hincasData.stages.find(s => s.id === selectedStage);
-  const currentConfig = currentStage?.configurations.find(c => c.id === selectedConfig);
+  const currentStage = useMemo(() => hincasData.stages.find(s => s.id === selectedStage), [hincasData, selectedStage]);
+  const currentConfig = useMemo(() => currentStage?.configurations.find(c => c.id === selectedConfig), [currentStage, selectedConfig]);
 
   // Reset measurements when configuration changes
   const expectedDistances = useMemo(() => {
@@ -89,14 +100,17 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
   const handleConfigChange = (configId: string) => {
     setSelectedConfig(configId);
     setMeasurements([]);
-    const stage = hincasData.stages.find(s => s.id === selectedStage);
-    if (stage) {
-      const config = stage.configurations.find(c => c.id === configId);
-      if (config) {
-        setConfigColor(config.color || '#000000');
-      }
+    const config = currentStage?.configurations.find(c => c.id === configId);
+    if (config) {
+      setConfigColor(config.color);
     }
   };
+
+  useEffect(() => {
+    if (currentConfig) {
+      setConfigColor(currentConfig.color);
+    }
+  }, [currentConfig]);
 
   const handleMeasurementChange = (index: number, value: string) => {
     const newMeasurements = [...measurements];
@@ -104,14 +118,11 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
     setMeasurements(newMeasurements);
   };
 
-  // Calculate total automatically
   const calculatedTotal = useMemo(() => {
     const validMeasurements = measurements.filter(m => m !== null && m !== undefined) as number[];
-    if (validMeasurements.length === expectedDistances.length) {
-      return validMeasurements.reduce((sum, m) => sum + m, 0);
-    }
-    return null;
-  }, [measurements, expectedDistances]);
+    if (validMeasurements.length === 0) return null;
+    return Math.round(validMeasurements.reduce((a, b) => a + b, 0) * 10000) / 10000;
+  }, [measurements]);
 
   const validationResults = useMemo(() => {
     const results: ValidationResult[] = [];
@@ -120,7 +131,6 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
       const measured = measurements[index];
       if (measured !== null && measured !== undefined) {
         const difference = measured - expected;
-        // Redondear a 4 decimales para evitar errores de precisión de punto flotante
         const roundedDifference = Math.round(Math.abs(difference) * 10000) / 10000;
         const isValid = roundedDifference <= hincasData.tolerance.individual;
         results.push({
@@ -134,14 +144,13 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
     });
 
     return results;
-  }, [measurements, expectedDistances]);
+  }, [measurements, expectedDistances, hincasData.tolerance.individual]);
 
   const totalValidation = useMemo(() => {
     if (!currentConfig || calculatedTotal === null) {
       return null;
     }
     const difference = calculatedTotal - currentConfig.totalDistance;
-    // Redondear a 4 decimales para evitar errores de precisión de punto flotante
     const roundedDifference = Math.round(Math.abs(difference) * 10000) / 10000;
     const isValid = roundedDifference <= hincasData.tolerance.total;
     return {
@@ -150,54 +159,40 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
       difference,
       isValid
     };
-  }, [calculatedTotal, currentConfig]);
+  }, [currentConfig, calculatedTotal, hincasData.tolerance.total]);
 
-  const allValid = validationResults.length > 0 && 
-                   validationResults.every(r => r.isValid) &&
-                   totalValidation !== null &&
-                   totalValidation.isValid;
-
-  const handleValidate = () => {
-    if (onValidationComplete) {
-      onValidationComplete(validationResults);
-    }
-  };
-
+  const allValid = useMemo(() => {
+    if (validationResults.length === 0 || !totalValidation) return false;
+    return validationResults.every(r => r.isValid) && totalValidation.isValid;
+  }, [validationResults, totalValidation]);
 
   const generatePDF = () => {
+    const recordsToExport = Array.from(selectedRecords).map(id => history.find(h => h.id === id)).filter(Boolean) as HistoryEntry[];
+    if (recordsToExport.length === 0) return;
+
     const doc = new jsPDF();
-    const selectedList = Array.from(selectedRecords);
-    const recordsToExport = selectedList.length > 0 
-      ? history.filter(h => selectedList.includes(h.id))
-      : history;
-
     let yPosition = 10;
-    doc.setFontSize(16);
-    doc.text('Histórico de Validaciones de Hincas', 10, yPosition);
-    yPosition += 10;
 
-    doc.setFontSize(10);
     recordsToExport.forEach((record, idx) => {
-      if (yPosition > 280) {
+      if (idx > 0) {
         doc.addPage();
         yPosition = 10;
       }
 
-      // Header
-      doc.setFillColor(200, 200, 200);
-      doc.rect(10, yPosition, 190, 8, 'F');
-      doc.text(`Registro ${idx + 1} - ${record.timestamp}`, 12, yPosition + 6);
-      yPosition += 10;
+      doc.setFontSize(14);
+      doc.text(`Validación ${idx + 1}`, 12, yPosition);
+      yPosition += 8;
 
-      // Datos
+      doc.setFontSize(10);
+      doc.text(`Fecha: ${record.timestamp}`, 12, yPosition);
+      yPosition += 5;
       doc.text(`Stage: ${record.stage}`, 12, yPosition);
-      yPosition += 6;
+      yPosition += 5;
       doc.text(`Configuración: ${record.configuration}`, 12, yPosition);
-      yPosition += 6;
-      doc.text(`Estado: ${record.totalValidation.isValid ? '✓ Válido' : '✗ Inválido'}`, 12, yPosition);
-      yPosition += 6;
+      yPosition += 5;
+      doc.text(`Estado: ${record.totalValidation.isValid ? 'Válido ✓' : 'Inválido ✗'}`, 12, yPosition);
+      yPosition += 8;
 
-      // Mediciones
       doc.text('Mediciones:', 12, yPosition);
       yPosition += 5;
       record.measurements.forEach((m, i) => {
@@ -209,7 +204,6 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
         yPosition += 5;
       });
 
-      // Total
       doc.text(`Total: ${record.totalValidation.expected.toFixed(4)} → ${record.total.toFixed(4)} | ${record.totalValidation.difference >= 0 ? '+' : ''}${record.totalValidation.difference.toFixed(4)}`, 12, yPosition);
       yPosition += 8;
 
@@ -249,73 +243,56 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
     setMeasurements([]);
   };
 
-  const handleDeleteHistoryEntry = (id: string) => {
-    setHistory(history.filter(entry => entry.id !== id));
+  const handleDeleteRecord = (id: string) => {
+    setHistory(history.filter(h => h.id !== id));
   };
 
-  const handleExportCSV = () => {
-    if (history.length === 0) return;
-
-    // Filtrar registros según la selección
-    let filteredHistory = history;
-    if (exportFilter === 'valid') {
-      filteredHistory = history.filter(entry => entry.results.every(r => r.isValid) && entry.totalValidation.isValid);
-    } else if (exportFilter === 'invalid') {
-      filteredHistory = history.filter(entry => !(entry.results.every(r => r.isValid) && entry.totalValidation.isValid));
+  const handleClearAll = () => {
+    if (confirm('¿Estás seguro de que deseas eliminar todo el histórico?')) {
+      setHistory([]);
     }
+  };
 
-    if (filteredHistory.length === 0) {
-      alert('No hay registros que cumplan con el filtro seleccionado');
-      return;
+  const handleSelectRecord = (id: string) => {
+    const newSelected = new Set(selectedRecords);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
     }
+    setSelectedRecords(newSelected);
+  };
 
-    const headers = ['Fecha/Hora', 'Stage', 'Configuración', 'Hinc 1 (Teórico→Medido|Dif)', 'Hinc 2 (Teórico→Medido|Dif)', 'Hinc 3 (Teórico→Medido|Dif)', 'Hinc 4 (Teórico→Medido|Dif)', 'Hinc 5 (Teórico→Medido|Dif)', 'Hinc 6 (Teórico→Medido|Dif)', 'Hinc 7 (Teórico→Medido|Dif)', 'Hinc 8 (Teórico→Medido|Dif)', 'Hinc 9 (Teórico→Medido|Dif)', 'Hinc 10 (Teórico→Medido|Dif)', 'Hinc 11 (Teórico→Medido|Dif)', 'Total Medido', 'Total Esperado', 'Diferencia Total', 'Estado', 'Descripción'];
-    const rows = filteredHistory.map(entry => {
-      const hincValues = Array(11).fill('').map((_, i) => {
-        const measured = entry.measurements[i]?.toFixed(4) || '';
-        const expected = entry.results[i]?.expected?.toFixed(4) || '';
-        const difference = entry.results[i]?.difference?.toFixed(4) || '';
-        return `${expected}→${measured}(${difference})`;
-      });
-      
-      // Validación estricta: todas las mediciones deben ser válidas Y el total debe ser válido
-      const isCompletelyValid = entry.results.every(r => r.isValid) && entry.totalValidation.isValid;
-      
-      return [
-        entry.timestamp,
-        entry.stage,
-        entry.configuration,
-        ...hincValues,
-        entry.total.toFixed(4),
-        entry.totalValidation.expected.toFixed(4),
-        entry.totalValidation.difference.toFixed(4),
-        isCompletelyValid ? 'Válido' : 'Inválido',
-        entry.description ? `"${entry.description}"` : ''
-      ].join(',');
-    });
-
-    const csv = [headers.join(','), ...rows].join('\n');
-    setCsvContent(csv);
-    setShowCsvPreview(true);
-    setShowExportDialog(false);
+  const handleSelectAll = () => {
+    if (selectedRecords.size === history.length) {
+      setSelectedRecords(new Set());
+    } else {
+      setSelectedRecords(new Set(history.map(h => h.id)));
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 flex justify-between items-start">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-start mb-8">
           <div>
             <h1 className="text-4xl font-bold text-slate-900 mb-2">Comprobador de Hincas</h1>
             <p className="text-slate-600">Validación de distancias entre hincas con tolerancia ±0.04 m</p>
           </div>
-          <Button
-            onClick={() => setShowHistory(!showHistory)}
-            variant="outline"
-            className="border-slate-300"
-          >
-            {showHistory ? 'Ocultar' : 'Ver'} Histórico ({history.length})
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setShowHistory(!showHistory)}
+              variant="outline"
+              className="border-slate-300"
+            >
+              {showHistory ? 'Ocultar' : 'Ver'} Histórico ({history.length})
+            </Button>
+            <Link href="/admin">
+              <Button variant="outline" className="border-slate-300">
+                ⚙️ Administración
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {showHistory ? (
@@ -329,110 +306,145 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
                 <p className="text-slate-500 text-sm">No hay validaciones registradas</p>
               </div>
             ) : (
-              <>
-                <div className="mb-4 flex gap-2">
+              <div className="space-y-4">
+                <div className="flex gap-2 mb-4">
                   <Button
-                    onClick={() => setShowExportDialog(true)}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={handleSelectAll}
+                    variant="outline"
+                    size="sm"
                   >
-                    <FileDown className="w-4 h-4" />
-                    Exportar PDF
+                    {selectedRecords.size === history.length ? 'Deseleccionar Todo' : 'Seleccionar Todo'}
                   </Button>
+                  {selectedRecords.size > 0 && (
+                    <Button
+                      onClick={() => setShowExportDialog(true)}
+                      variant="default"
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <FileDown className="w-4 h-4 mr-2" />
+                      Exportar PDF ({selectedRecords.size})
+                    </Button>
+                  )}
                   <Button
-                    onClick={() => {
-                      if (confirm('¿Estás seguro de que quieres eliminar todo el histórico?')) {
-                        setHistory([]);
-                      }
-                    }}
+                    onClick={handleClearAll}
                     variant="destructive"
-                    className="flex items-center gap-2"
+                    size="sm"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4 mr-2" />
                     Limpiar Todo
                   </Button>
                 </div>
 
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {history.map((entry) => (
-                    <div
-                      key={entry.id}
-                      className={`p-4 rounded-lg border-l-4 ${
-                        entry.totalValidation.isValid
-                          ? 'bg-green-50 border-green-500'
-                          : 'bg-red-50 border-red-500'
+                {showExportDialog && (
+                  <Card className="p-4 bg-blue-50 border-blue-200">
+                    <h3 className="font-semibold mb-3">Seleccionar registros para exportar</h3>
+                    <div className="space-y-2 mb-4 max-h-60 overflow-y-auto">
+                      {history.map(record => (
+                        <label key={record.id} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedRecords.has(record.id)}
+                            onChange={() => handleSelectRecord(record.id)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-sm">
+                            {record.timestamp} - {record.configuration} - {record.totalValidation.isValid ? '✓ Válido' : '✗ Inválido'}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={generatePDF} className="bg-green-600 hover:bg-green-700">
+                        <Download className="w-4 h-4 mr-2" />
+                        Descargar PDF
+                      </Button>
+                      <Button onClick={() => setShowExportDialog(false)} variant="outline">
+                        Cancelar
+                      </Button>
+                    </div>
+                  </Card>
+                )}
+
+                <div className="space-y-3">
+                  {history.map((record) => (
+                    <Card
+                      key={record.id}
+                      className={`p-4 border-l-4 ${
+                        record.totalValidation.isValid
+                          ? 'border-l-green-500 bg-green-50'
+                          : 'border-l-red-500 bg-red-50'
                       }`}
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <div className="font-semibold text-slate-900">{entry.stage}</div>
-                          <div className="text-sm text-slate-600">{entry.configuration}</div>
-                          <div className="text-xs text-slate-500">{entry.timestamp}</div>
-                          <div className="text-xs text-slate-500 mt-1">
-                            <span className="font-semibold">Total:</span> {entry.totalValidation.expected.toFixed(4)} m → {entry.total.toFixed(4)} m | {entry.totalValidation.difference > 0 ? '+' : ''}{entry.totalValidation.difference.toFixed(4)} m
-                          </div>
+                          <p className="font-semibold text-slate-900">{record.timestamp}</p>
+                          <p className="text-sm text-slate-600">{record.stage} - {record.configuration}</p>
                         </div>
                         <div className="flex gap-2">
-                          <span className={`text-xs font-semibold px-2 py-1 rounded ${
-                            entry.results.every(r => r.isValid) && entry.totalValidation.isValid
-                              ? 'bg-green-200 text-green-800'
-                              : 'bg-red-200 text-red-800'
-                          }`}>
-                            {entry.results.every(r => r.isValid) && entry.totalValidation.isValid ? 'Válido' : 'Inválido'}
-                          </span>
+                          <input
+                            type="checkbox"
+                            checked={selectedRecords.has(record.id)}
+                            onChange={() => handleSelectRecord(record.id)}
+                            className="w-4 h-4"
+                          />
                           <Button
-                            onClick={() => handleDeleteHistoryEntry(entry.id)}
-                            size="sm"
+                            onClick={() => handleDeleteRecord(record.id)}
                             variant="ghost"
-                            className="text-red-600 hover:text-red-800"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       </div>
-                      <div className="font-mono text-sm space-y-1">
-                        <div>Total: {entry.total.toFixed(4)} m (Esperado: {entry.totalValidation.expected.toFixed(4)} m)</div>
-                        <div>Diferencia: {entry.totalValidation.difference > 0 ? '+' : ''}{entry.totalValidation.difference.toFixed(4)} m</div>
-                        {entry.description && (
-                          <div className="mt-2 p-2 bg-slate-100 rounded text-slate-700 text-xs italic">
-                            "{entry.description}"
-                          </div>
-                        )}
-                        <div className="mt-2 text-xs text-slate-600 max-h-40 overflow-y-auto">
-                          <div className="font-semibold mb-1">Mediciones (Teórico → Medido | Diferencia):</div>
-                          <div className="space-y-1">
-                            {entry.measurements.map((m, idx) => {
-                              const expected = entry.results[idx]?.expected || 0;
-                              const difference = entry.results[idx]?.difference || 0;
-                              return (
-                                <div key={idx} className="text-slate-600 font-mono text-xs">
-                                  Hinc {idx + 1}: {expected.toFixed(4)} → {m.toFixed(4)} | {difference > 0 ? '+' : ''}{difference.toFixed(4)} m
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
+
+                      <div className="text-sm space-y-1 mb-2">
+                        <p>
+                          <strong>Total:</strong> {record.totalValidation.expected.toFixed(4)} → {record.total.toFixed(4)} | {record.totalValidation.difference >= 0 ? '+' : ''}{record.totalValidation.difference.toFixed(4)} m
+                        </p>
+                        <p>
+                          <strong>Estado:</strong>{' '}
+                          {record.totalValidation.isValid ? (
+                            <span className="text-green-600">✓ Válido</span>
+                          ) : (
+                            <span className="text-red-600">✗ Inválido</span>
+                          )}
+                        </p>
                       </div>
-                    </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                        {record.measurements.map((m, i) => {
+                          const result = record.results[i];
+                          return (
+                            <div key={i} className={result?.isValid ? 'text-green-700' : 'text-red-700'}>
+                              Hinc {i + 1}: {result?.expected.toFixed(4)} → {m.toFixed(4)} | {result?.difference >= 0 ? '+' : ''}{result?.difference.toFixed(4)}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {record.description && (
+                        <p className="text-xs text-slate-600 italic">Nota: {record.description}</p>
+                      )}
+                    </Card>
                   ))}
                 </div>
-              </>
+              </div>
             )}
           </Card>
         ) : (
           // Main Validator View
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - Configuration */}
-            <div className="lg:col-span-1">
-              <Card className="p-6 border-slate-200 shadow-sm">
-                <h2 className="text-lg font-semibold text-slate-900 mb-4">Configuración</h2>
-                
-                {/* Stage Selection */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Tipo de Stage
-                  </label>
+          <div className="grid grid-cols-3 gap-6">
+            {/* Configuration Panel */}
+            <Card className="p-6 border-slate-200 shadow-sm">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Configuración</h2>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Tipo de Stage</label>
                   <Select value={selectedStage} onValueChange={handleStageChange}>
-                    <SelectTrigger className="w-full border-slate-300">
+                    <SelectTrigger className="border-slate-300">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -445,13 +457,10 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
                   </Select>
                 </div>
 
-                {/* Configuration Selection */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Configuración
-                  </label>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Configuración</label>
                   <Select value={selectedConfig} onValueChange={handleConfigChange}>
-                    <SelectTrigger className="w-full border-slate-300">
+                    <SelectTrigger className="border-slate-300">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -459,7 +468,7 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
                         <SelectItem key={config.id} value={config.id}>
                           <div className="flex items-center gap-2">
                             <div
-                              className="w-3 h-3 rounded-full border border-slate-300"
+                              className="w-3 h-3 rounded-full"
                               style={{ backgroundColor: config.color }}
                             />
                             {config.name}
@@ -470,387 +479,179 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
                   </Select>
                 </div>
 
-                {/* Color Indicator */}
-                <div className="mb-6 flex items-center gap-3 p-3 rounded border-2" style={{ borderColor: configColor, backgroundColor: configColor + '15' }}>
+                <div className="border-t border-slate-200 pt-4">
                   <div
-                    className="w-8 h-8 rounded border-2 border-white shadow-sm"
-                    style={{ backgroundColor: configColor }}
-                  />
-                  <span className="text-sm font-medium text-slate-700">{selectedConfig}</span>
+                    className="p-3 rounded border-2"
+                    style={{ borderColor: configColor, backgroundColor: configColor + '20' }}
+                  >
+                    <p className="text-sm font-medium text-slate-700">{selectedConfig}</p>
+                  </div>
                 </div>
 
-                <div className="border-t border-slate-200 pt-6">
-                  <h3 className="text-sm font-semibold text-slate-900 mb-4">
-                    Distancias Esperadas (m)
-                  </h3>
-                  <div className="space-y-2 mb-4">
-                    {expectedDistances.map((distance, index) => (
-                      <div key={index} className="flex justify-between items-center text-sm">
-                        <span className="text-slate-600">Hinc {index + 1}:</span>
-                        <span className="font-mono font-semibold text-slate-900">{distance.toFixed(4)}</span>
+                <div className="border-t border-slate-200 pt-4">
+                  <h3 className="text-sm font-medium text-slate-700 mb-3">Distancias Esperadas (m)</h3>
+                  <div className="space-y-2 text-sm">
+                    {expectedDistances.map((dist, idx) => (
+                      <div key={idx} className="flex justify-between">
+                        <span className="text-slate-600">Hinc {idx + 1}:</span>
+                        <span className="font-mono font-semibold text-slate-900">{dist.toFixed(4)}</span>
                       </div>
                     ))}
                   </div>
-                  <div className="bg-slate-100 rounded p-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-slate-700">Total:</span>
-                      <span className="font-mono font-bold text-slate-900 text-lg">
-                        {currentConfig?.totalDistance.toFixed(4)}
-                      </span>
-                    </div>
+                </div>
+
+                <div className="border-t border-slate-200 pt-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-slate-700">Total:</span>
+                    <span className="font-mono font-bold text-lg text-slate-900">{currentConfig?.totalDistance.toFixed(4)}</span>
                   </div>
                 </div>
-              </Card>
-            </div>
+              </div>
+            </Card>
 
-            {/* Middle Column - Measurements */}
-            <div className="lg:col-span-1">
-              <Card className="p-6 border-slate-200 shadow-sm">
-                <h2 className="text-lg font-semibold text-slate-900 mb-4">Mediciones (m)</h2>
-                
-                <div className="space-y-3 mb-6">
-                  {expectedDistances.map((_, index) => (
-                    <div key={index}>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        Hinc {index + 1}
-                      </label>
-                      <Input
-                        type="number"
-                        step="0.0001"
-                        placeholder={`${expectedDistances[index].toFixed(4)}`}
-                        value={measurements[index] ?? ''}
-                        onChange={(e) => handleMeasurementChange(index, e.target.value)}
-                        className="border-slate-300 font-mono"
-                      />
+            {/* Measurements Panel */}
+            <Card className="p-6 border-slate-200 shadow-sm">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Mediciones (m)</h2>
+
+              <div className="space-y-3 mb-6">
+                {expectedDistances.map((_, idx) => (
+                  <div key={idx}>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Hinc {idx + 1}</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={measurements[idx] ?? ''}
+                      onChange={(e) => handleMeasurementChange(idx, e.target.value)}
+                      placeholder={expectedDistances[idx]?.toFixed(4)}
+                      className="border-slate-300"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-slate-200 pt-4 mb-4">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Total Medido (m)</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={calculatedTotal ?? ''}
+                  readOnly
+                  className="border-slate-300 bg-slate-50"
+                />
+                <p className="text-xs text-slate-500 mt-1">Se calcula automáticamente</p>
+              </div>
+
+              <div className="space-y-2 mb-4">
+                <label className="block text-sm font-medium text-slate-700">Descripción (opcional)</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Agregar nota..."
+                  className="w-full p-2 border border-slate-300 rounded text-sm"
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleSaveToHistory}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  disabled={validationResults.length === 0}
+                >
+                  <CheckSquare2 className="w-4 h-4 mr-2" />
+                  Guardar en Histórico
+                </Button>
+                <Button
+                  onClick={handleClear}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Limpiar
+                </Button>
+              </div>
+            </Card>
+
+            {/* Validation Panel */}
+            <Card className="p-6 border-slate-200 shadow-sm">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Validación</h2>
+
+              {validationResults.length === 0 ? (
+                <div className="text-center py-12">
+                  <AlertCircle className="w-12 h-12 text-slate-400 mx-auto mb-2" />
+                  <p className="text-slate-500 text-sm">Ingresa mediciones para validar</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {validationResults.map((result) => (
+                    <div
+                      key={result.index}
+                      className={`p-3 rounded border-l-4 ${
+                        result.isValid
+                          ? 'bg-green-50 border-l-green-500'
+                          : 'bg-red-50 border-l-red-500'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-slate-900">Hinc {result.index + 1}</p>
+                          <p className="text-xs text-slate-600 font-mono">
+                            {result.expected.toFixed(4)} → {result.measured.toFixed(4)}
+                          </p>
+                          <p className={`text-xs font-semibold ${result.isValid ? 'text-green-700' : 'text-red-700'}`}>
+                            {result.difference >= 0 ? '+' : ''}{result.difference.toFixed(4)} m
+                          </p>
+                        </div>
+                        {result.isValid ? (
+                          <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+                        ) : (
+                          <XCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                        )}
+                      </div>
                     </div>
                   ))}
-                </div>
 
-                <div className="border-t border-slate-200 pt-6">
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Total Medido (m)
-                  </label>
-                  <Input
-                    type="number"
-                    step="0.0001"
-                    placeholder={`${currentConfig?.totalDistance.toFixed(4)}`}
-                    value={calculatedTotal?.toFixed(4) ?? ''}
-                    readOnly
-                    className="border-slate-300 font-mono font-bold text-base bg-slate-50"
-                  />
-                  <p className="text-xs text-slate-500 mt-2">Se calcula automáticamente</p>
-                </div>
-
-                <div className="flex gap-2 mt-6">
-                  <Button
-                    onClick={handleValidate}
-                    disabled={calculatedTotal === null || validationResults.length === 0}
-                    className="flex-1 bg-slate-900 hover:bg-slate-800 text-white disabled:bg-slate-400"
-                  >
-                    Validar
-                  </Button>
-                  <Button
-                    onClick={handleClear}
-                    variant="outline"
-                    className="flex-1 border-slate-300"
-                  >
-                    Limpiar
-                  </Button>
-                </div>
-
-                {validationResults.length > 0 && (
-                  <div className="mt-6 border-t border-slate-200 pt-6">
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Descripción (opcional)
-                    </label>
-                    <textarea
-                      placeholder="Añade una nota o descripción para este registro..."
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      className="w-full p-2 border border-slate-300 rounded text-sm resize-none h-20 font-sans"
-                    />
-                    <Button
-                      onClick={handleSaveToHistory}
-                      disabled={calculatedTotal === null || validationResults.length === 0}
-                      className="w-full mt-3 bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      Guardar en Histórico
-                    </Button>
-                  </div>
-                )}
-              </Card>
-            </div>
-
-            {/* Right Column - Results */}
-            <div className="lg:col-span-1">
-              <Card className="p-6 border-slate-200 shadow-sm">
-                <h2 className="text-lg font-semibold text-slate-900 mb-4">Validación</h2>
-                
-                {validationResults.length === 0 ? (
-                  <div className="text-center py-8">
-                    <AlertCircle className="w-12 h-12 text-slate-400 mx-auto mb-2" />
-                    <p className="text-slate-500 text-sm">Ingresa mediciones para validar</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="space-y-2 mb-6">
-                      {validationResults.map((result) => (
-                        <div
-                          key={result.index}
-                          className={`flex items-center justify-between p-3 rounded border-l-4 ${
-                            result.isValid
-                              ? 'bg-green-50 border-green-500'
-                              : 'bg-red-50 border-red-500'
-                          }`}
-                        >
-                          <div className="flex-1">
-                            <div className="text-sm font-medium text-slate-900">
-                              Hinc {result.index + 1}
-                            </div>
-                            <div className="text-xs text-slate-600">
-                              {result.measured.toFixed(4)} m
-                            </div>
-                          </div>
-                          <div className="text-right mr-3">
-                            <div className="font-mono text-sm font-semibold">
-                              {result.difference > 0 ? '+' : ''}{result.difference.toFixed(4)}
-                            </div>
-                            <div className="text-xs text-slate-600">
-                              {Math.abs(result.difference).toFixed(4)} m
-                            </div>
-                          </div>
-                          {result.isValid ? (
-                            <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-                          ) : (
-                            <XCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-
-                    {totalValidation && (
-                      <div className="border-t border-slate-200 pt-4">
-                        <div
-                          className={`p-4 rounded-lg border-2 ${
-                            totalValidation.isValid
-                              ? 'bg-green-50 border-green-500'
-                              : 'bg-red-50 border-red-500'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-semibold text-slate-900">Total</span>
-                            {totalValidation.isValid ? (
-                              <CheckCircle2 className="w-5 h-5 text-green-600" />
-                            ) : (
-                              <XCircle className="w-5 h-5 text-red-600" />
-                            )}
-                          </div>
-                          <div className="font-mono text-sm mb-1">
-                            Medido: {totalValidation.measured.toFixed(4)} m
-                          </div>
-                          <div className="font-mono text-sm mb-2">
-                            Esperado: {totalValidation.expected.toFixed(4)} m
-                          </div>
-                          <div className="font-mono text-sm font-semibold">
-                            Diferencia: {totalValidation.difference > 0 ? '+' : ''}{totalValidation.difference.toFixed(4)} m
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Diagrama Visual de Distancias */}
-                    {measurements.some(m => m !== null) && (
-                      <div className="border-t border-slate-200 pt-4 mt-4">
-                        <h3 className="text-sm font-semibold text-slate-900 mb-3">Diagrama de Distancias</h3>
-                        <div className="bg-white p-4 rounded border border-slate-200 overflow-x-auto">
-                          <svg width="100%" height="120" viewBox="0 0 800 120" className="min-w-max">
-                            {/* Línea superior */}
-                            <line x1="20" y1="20" x2="780" y2="20" stroke="#1e293b" strokeWidth="2" />
-                            {/* Línea inferior */}
-                            <line x1="20" y1="80" x2="780" y2="80" stroke="#1e293b" strokeWidth="2" />
-                            {/* Línea izquierda */}
-                            <line x1="20" y1="20" x2="20" y2="80" stroke="#1e293b" strokeWidth="2" />
-                            {/* Línea derecha */}
-                            <line x1="780" y1="20" x2="780" y2="80" stroke="#1e293b" strokeWidth="2" />
-                            
-                            {/* Hincas y distancias */}
-                            {measurements.map((measurement, index) => {
-                              const totalWidth = 760;
-                              const numHincas = measurements.length;
-                              const hincWidth = totalWidth / numHincas;
-                              const xPos = 20 + (index + 0.5) * hincWidth;
-                              const isValid = validationResults[index]?.isValid ?? true;
-                              const fillColor = isValid ? '#10b981' : '#ef4444';
-                              
-                              return (
-                                <g key={index}>
-                                  {/* Línea vertical de hinc */}
-                                  <line x1={xPos} y1="20" x2={xPos} y2="80" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4" />
-                                  {/* Círculo de hinc */}
-                                  <circle cx={xPos} cy="50" r="6" fill={fillColor} />
-                                  {/* Etiqueta de distancia medida */}
-                                  <text x={xPos} y="105" textAnchor="middle" fontSize="11" fontFamily="monospace" fontWeight="bold" fill="#1e293b">
-                                    {measurement?.toFixed(2) || '—'}
-                                  </text>
-                                  {/* Etiqueta de diferencia */}
-                                  {validationResults[index] && (
-                                    <text x={xPos} y="115" textAnchor="middle" fontSize="9" fontFamily="monospace" fill={isValid ? '#10b981' : '#ef4444'}>
-                                      {validationResults[index].difference > 0 ? '+' : ''}{validationResults[index].difference.toFixed(3)}
-                                    </text>
-                                  )}
-                                </g>
-                              );
-                            })}
-                            
-                            {/* Total medido arriba */}
-                            <text x="400" y="15" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#1e293b">
-                              Total: {totalValidation?.measured.toFixed(2) || '—'} m
-                            </text>
-                          </svg>
-                        </div>
-                        <div className="text-xs text-slate-600 mt-2 text-center">
-                          Verde: Válido | Rojo: Fuera de tolerancia
-                        </div>
-                      </div>
-                    )}
-
-                    {allValid && (
-                      <div className="mt-4 p-4 bg-green-100 border border-green-300 rounded-lg">
-                        <p className="text-green-800 font-semibold text-center">
-                          ✓ Todas las mediciones son válidas
+                  {totalValidation && (
+                    <div className="border-t border-slate-200 pt-4 mt-4">
+                      <div
+                        className={`p-4 rounded-lg border-2 ${
+                          totalValidation.isValid
+                            ? 'bg-green-50 border-green-500'
+                            : 'bg-red-50 border-red-500'
+                        }`}
+                      >
+                        <p className="text-sm font-medium text-slate-900 mb-2">Total</p>
+                        <p className="text-sm font-mono text-slate-700 mb-2">
+                          {totalValidation.expected.toFixed(4)} → {totalValidation.measured.toFixed(4)}
+                        </p>
+                        <p className={`text-sm font-bold ${totalValidation.isValid ? 'text-green-700' : 'text-red-700'}`}>
+                          {totalValidation.difference >= 0 ? '+' : ''}{totalValidation.difference.toFixed(4)} m
                         </p>
                       </div>
-                    )}
-                  </>
-                )}
-              </Card>
-            </div>
-          </div>
-        )}
 
-        {/* CSV Preview Modal */}
-        {showCsvPreview && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full p-6 max-h-96 flex flex-col">
-              <h2 className="text-xl font-bold text-slate-900 mb-4">Vista Previa CSV</h2>
-              
-              <textarea
-                value={csvContent}
-                readOnly
-                className="flex-1 p-4 border border-slate-200 rounded font-mono text-sm bg-slate-50 overflow-auto mb-4"
-              />
-
-              <div className="flex gap-2 justify-end">
-                <Button
-                  onClick={() => setShowCsvPreview(false)}
-                  variant="outline"
-                  className="px-4 py-2"
-                >
-                  Cerrar
-                </Button>
-                <Button
-                  onClick={() => {
-                    navigator.clipboard.writeText(csvContent);
-                    alert('CSV copiado al portapapeles');
-                  }}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  Copiar al Portapapeles
-                </Button>
-                <Button
-                  onClick={() => {
-                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                    const link = document.createElement('a');
-                    const url = URL.createObjectURL(blob);
-                    link.href = url;
-                    link.download = `hincas_history_${new Date().toISOString().split('T')[0]}.csv`;
-                    link.click();
-                    URL.revokeObjectURL(url);
-                  }}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white"
-                >
-                  Descargar
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Export Dialog */}
-        {showExportDialog && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full p-6 max-h-96 flex flex-col">
-              <h2 className="text-xl font-bold text-slate-900 mb-4">Exportar Histórico a PDF</h2>
-              
-              <div className="space-y-4 mb-6 flex-1 overflow-y-auto">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Selecciona registros para exportar:</label>
-                  <div className="space-y-2 border border-slate-200 rounded p-3 max-h-48 overflow-y-auto">
-                    {history.map((record) => (
-                      <label key={record.id} className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-2 rounded">
-                        <input
-                          type="checkbox"
-                          checked={selectedRecords.has(record.id)}
-                          onChange={(e) => {
-                            const newSelected = new Set(selectedRecords);
-                            if (e.target.checked) {
-                              newSelected.add(record.id);
-                            } else {
-                              newSelected.delete(record.id);
-                            }
-                            setSelectedRecords(newSelected);
-                          }}
-                          className="w-4 h-4"
-                        />
-                        <span className="text-sm text-slate-700">
-                          {record.timestamp} - {record.configuration} ({record.totalValidation.isValid ? '✓' : '✗'})
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                  <div className="mt-2 flex gap-2">
-                    <Button
-                      onClick={() => setSelectedRecords(new Set(history.map(h => h.id)))}
-                      variant="outline"
-                      className="text-xs"
-                    >
-                      Seleccionar Todo
-                    </Button>
-                    <Button
-                      onClick={() => setSelectedRecords(new Set())}
-                      variant="outline"
-                      className="text-xs"
-                    >
-                      Deseleccionar Todo
-                    </Button>
-                  </div>
+                      <div className="mt-4">
+                        {allValid ? (
+                          <div className="p-3 rounded-lg bg-green-100 border border-green-300 flex items-center gap-2">
+                            <CheckCircle2 className="w-5 h-5 text-green-700" />
+                            <span className="text-sm font-semibold text-green-700">✓ Todas las mediciones son válidas</span>
+                          </div>
+                        ) : (
+                          <div className="p-3 rounded-lg bg-red-100 border border-red-300 flex items-center gap-2">
+                            <XCircle className="w-5 h-5 text-red-700" />
+                            <span className="text-sm font-semibold text-red-700">✗ Hay mediciones fuera de tolerancia</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
+              )}
+
+              <div className="mt-6 pt-4 border-t border-slate-200 text-xs text-slate-600">
+                <p>Tolerancia individual: ±{hincasData.tolerance.individual.toFixed(4)} m | Tolerancia total: ±{hincasData.tolerance.total.toFixed(4)} m</p>
               </div>
-              
-              <div className="flex gap-2 justify-end">
-                <Button
-                  onClick={() => setShowExportDialog(false)}
-                  variant="outline"
-                  className="px-4 py-2"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={generatePDF}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
-                >
-                  <FileDown className="w-4 h-4" />
-                  Descargar PDF
-                </Button>
-              </div>
-            </div>
+            </Card>
           </div>
         )}
-
-        {/* Footer Info */}
-        <div className="mt-8 text-center text-sm text-slate-600">
-          <p>Tolerancia individual: ±{(hincasData.tolerance.individual).toFixed(4)} m | Tolerancia total: ±{(hincasData.tolerance.total).toFixed(4)} m</p>
-        </div>
       </div>
     </div>
   );
