@@ -41,7 +41,11 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
   const [measurements, setMeasurements] = useState<(number | null)[]>([]);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [showHistory, setShowHistory] = useState(false);
-  const [description, setDescription] = useState<string>('');
+  const [description, setDescription] = useState('');
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportFilter, setExportFilter] = useState<'all' | 'valid' | 'invalid'>('all');
+  const [csvContent, setCsvContent] = useState<string>('');
+  const [showCsvPreview, setShowCsvPreview] = useState(false);
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -178,8 +182,21 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
   const handleExportCSV = () => {
     if (history.length === 0) return;
 
+    // Filtrar registros según la selección
+    let filteredHistory = history;
+    if (exportFilter === 'valid') {
+      filteredHistory = history.filter(entry => entry.results.every(r => r.isValid) && entry.totalValidation.isValid);
+    } else if (exportFilter === 'invalid') {
+      filteredHistory = history.filter(entry => !(entry.results.every(r => r.isValid) && entry.totalValidation.isValid));
+    }
+
+    if (filteredHistory.length === 0) {
+      alert('No hay registros que cumplan con el filtro seleccionado');
+      return;
+    }
+
     const headers = ['Fecha/Hora', 'Stage', 'Configuración', 'Hinc 1 (Teórico→Medido|Dif)', 'Hinc 2 (Teórico→Medido|Dif)', 'Hinc 3 (Teórico→Medido|Dif)', 'Hinc 4 (Teórico→Medido|Dif)', 'Hinc 5 (Teórico→Medido|Dif)', 'Hinc 6 (Teórico→Medido|Dif)', 'Hinc 7 (Teórico→Medido|Dif)', 'Hinc 8 (Teórico→Medido|Dif)', 'Hinc 9 (Teórico→Medido|Dif)', 'Hinc 10 (Teórico→Medido|Dif)', 'Hinc 11 (Teórico→Medido|Dif)', 'Total Medido', 'Total Esperado', 'Diferencia Total', 'Estado', 'Descripción'];
-    const rows = history.map(entry => {
+    const rows = filteredHistory.map(entry => {
       const hincValues = Array(11).fill('').map((_, i) => {
         const measured = entry.measurements[i]?.toFixed(4) || '';
         const expected = entry.results[i]?.expected?.toFixed(4) || '';
@@ -204,21 +221,9 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
     });
 
     const csv = [headers.join(','), ...rows].join('\n');
-    
-    // Crear blob y descargar
-    try {
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.href = url;
-      link.download = `hincas_history_${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(url), 100);
-    } catch (error) {
-      console.error('Error al exportar CSV:', error);
-    }
+    setCsvContent(csv);
+    setShowCsvPreview(true);
+    setShowExportDialog(false);
   };
 
   return (
@@ -253,7 +258,7 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
               <>
                 <div className="mb-4 flex gap-2">
                   <Button
-                    onClick={handleExportCSV}
+                    onClick={() => setShowExportDialog(true)}
                     className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
                   >
                     <Download className="w-4 h-4" />
@@ -630,6 +635,120 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
                   </>
                 )}
               </Card>
+            </div>
+          </div>
+        )}
+
+        {/* CSV Preview Modal */}
+        {showCsvPreview && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full p-6 max-h-96 flex flex-col">
+              <h2 className="text-xl font-bold text-slate-900 mb-4">Vista Previa CSV</h2>
+              
+              <textarea
+                value={csvContent}
+                readOnly
+                className="flex-1 p-4 border border-slate-200 rounded font-mono text-sm bg-slate-50 overflow-auto mb-4"
+              />
+
+              <div className="flex gap-2 justify-end">
+                <Button
+                  onClick={() => setShowCsvPreview(false)}
+                  variant="outline"
+                  className="px-4 py-2"
+                >
+                  Cerrar
+                </Button>
+                <Button
+                  onClick={() => {
+                    navigator.clipboard.writeText(csvContent);
+                    alert('CSV copiado al portapapeles');
+                  }}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Copiar al Portapapeles
+                </Button>
+                <Button
+                  onClick={() => {
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    const url = URL.createObjectURL(blob);
+                    link.href = url;
+                    link.download = `hincas_history_${new Date().toISOString().split('T')[0]}.csv`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Descargar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Export Dialog */}
+        {showExportDialog && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+              <h2 className="text-xl font-bold text-slate-900 mb-4">Exportar Histórico</h2>
+              
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Selecciona qué exportar:</label>
+                  <div className="space-y-2">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="exportFilter"
+                        value="all"
+                        checked={exportFilter === 'all'}
+                        onChange={(e) => setExportFilter(e.target.value as 'all' | 'valid' | 'invalid')}
+                        className="mr-2"
+                      />
+                      <span className="text-slate-700">Todos los registros ({history.length})</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="exportFilter"
+                        value="valid"
+                        checked={exportFilter === 'valid'}
+                        onChange={(e) => setExportFilter(e.target.value as 'all' | 'valid' | 'invalid')}
+                        className="mr-2"
+                      />
+                      <span className="text-slate-700">Solo válidos ({history.filter(e => e.results.every(r => r.isValid) && e.totalValidation.isValid).length})</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="exportFilter"
+                        value="invalid"
+                        checked={exportFilter === 'invalid'}
+                        onChange={(e) => setExportFilter(e.target.value as 'all' | 'valid' | 'invalid')}
+                        className="mr-2"
+                      />
+                      <span className="text-slate-700">Solo inválidos ({history.filter(e => !(e.results.every(r => r.isValid) && e.totalValidation.isValid)).length})</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button
+                  onClick={() => setShowExportDialog(false)}
+                  variant="outline"
+                  className="px-4 py-2"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleExportCSV}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Descargar CSV
+                </Button>
+              </div>
             </div>
           </div>
         )}
