@@ -173,9 +173,14 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
   const handleExportCSV = () => {
     if (history.length === 0) return;
 
-    const headers = ['Fecha/Hora', 'Stage', 'Configuración', 'Hinc 1', 'Hinc 2', 'Hinc 3', 'Hinc 4', 'Hinc 5', 'Hinc 6', 'Hinc 7', 'Hinc 8', 'Hinc 9', 'Hinc 10', 'Hinc 11', 'Total Medido', 'Total Esperado', 'Diferencia Total', 'Estado', 'Descripción'];
+    const headers = ['Fecha/Hora', 'Stage', 'Configuración', 'Hinc 1 (Teórico→Medido|Dif)', 'Hinc 2 (Teórico→Medido|Dif)', 'Hinc 3 (Teórico→Medido|Dif)', 'Hinc 4 (Teórico→Medido|Dif)', 'Hinc 5 (Teórico→Medido|Dif)', 'Hinc 6 (Teórico→Medido|Dif)', 'Hinc 7 (Teórico→Medido|Dif)', 'Hinc 8 (Teórico→Medido|Dif)', 'Hinc 9 (Teórico→Medido|Dif)', 'Hinc 10 (Teórico→Medido|Dif)', 'Hinc 11 (Teórico→Medido|Dif)', 'Total Medido', 'Total Esperado', 'Diferencia Total', 'Estado', 'Descripción'];
     const rows = history.map(entry => {
-      const hincValues = Array(11).fill('').map((_, i) => entry.measurements[i]?.toFixed(4) || '');
+      const hincValues = Array(11).fill('').map((_, i) => {
+        const measured = entry.measurements[i]?.toFixed(4) || '';
+        const expected = entry.results[i]?.expected?.toFixed(4) || '';
+        const difference = entry.results[i]?.difference?.toFixed(4) || '';
+        return `${expected}→${measured}(${difference})`;
+      });
       return [
         entry.timestamp,
         entry.stage,
@@ -268,6 +273,9 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
                           <div className="font-semibold text-slate-900">{entry.stage}</div>
                           <div className="text-sm text-slate-600">{entry.configuration}</div>
                           <div className="text-xs text-slate-500">{entry.timestamp}</div>
+                          <div className="text-xs text-slate-500 mt-1">
+                            <span className="font-semibold">Total:</span> {entry.totalValidation.expected.toFixed(4)} m → {entry.total.toFixed(4)} m | {entry.totalValidation.difference > 0 ? '+' : ''}{entry.totalValidation.difference.toFixed(4)} m
+                          </div>
                         </div>
                         <div className="flex gap-2">
                           <span className={`text-xs font-semibold px-2 py-1 rounded ${
@@ -295,14 +303,18 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
                             "{entry.description}"
                           </div>
                         )}
-                        <div className="mt-2 text-xs text-slate-600 max-h-20 overflow-y-auto">
-                          <div className="font-semibold mb-1">Mediciones:</div>
-                          <div className="grid grid-cols-2 gap-1">
-                            {entry.measurements.map((m, idx) => (
-                              <div key={idx} className="text-slate-600">
-                                Hinc {idx + 1}: {m.toFixed(4)} m
-                              </div>
-                            ))}
+                        <div className="mt-2 text-xs text-slate-600 max-h-40 overflow-y-auto">
+                          <div className="font-semibold mb-1">Mediciones (Teórico → Medido | Diferencia):</div>
+                          <div className="space-y-1">
+                            {entry.measurements.map((m, idx) => {
+                              const expected = entry.results[idx]?.expected || 0;
+                              const difference = entry.results[idx]?.difference || 0;
+                              return (
+                                <div key={idx} className="text-slate-600 font-mono text-xs">
+                                  Hinc {idx + 1}: {expected.toFixed(4)} → {m.toFixed(4)} | {difference > 0 ? '+' : ''}{difference.toFixed(4)} m
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       </div>
