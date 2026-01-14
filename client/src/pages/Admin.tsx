@@ -34,7 +34,7 @@ interface HincasData {
 
 export default function Admin() {
   const [hincasData, setHincasData] = useState<HincasData>(defaultHincasData);
-  const [activeTab, setActiveTab] = useState<'stages' | 'tolerance' | 'import-export'>('stages');
+  const [activeTab, setActiveTab] = useState<'configuracion' | 'mediciones' | 'validacion'>('configuracion');
   const [editingStageId, setEditingStageId] = useState<string | null>(null);
   const [editingConfigId, setEditingConfigId] = useState<string | null>(null);
   const [editingDistanceIndex, setEditingDistanceIndex] = useState<number | null>(null);
@@ -329,76 +329,76 @@ export default function Admin() {
         {/* Tabs - Desktop */}
         <div className="hidden md:flex gap-2 mb-8 border-b border-slate-700">
           <button
-            onClick={() => setActiveTab('stages')}
+            onClick={() => setActiveTab('configuracion')}
             className={`px-6 py-3 font-semibold transition-all border-b-2 ${
-              activeTab === 'stages'
+              activeTab === 'configuracion'
                 ? 'border-blue-500 text-blue-400'
                 : 'border-transparent text-slate-400 hover:text-slate-300'
             }`}
           >
-            Configuraciones
+            Configuración
           </button>
           <button
-            onClick={() => setActiveTab('tolerance')}
+            onClick={() => setActiveTab('mediciones')}
             className={`px-6 py-3 font-semibold transition-all border-b-2 ${
-              activeTab === 'tolerance'
+              activeTab === 'mediciones'
                 ? 'border-blue-500 text-blue-400'
                 : 'border-transparent text-slate-400 hover:text-slate-300'
             }`}
           >
-            Tolerancias
+            Mediciones
           </button>
           <button
-            onClick={() => setActiveTab('import-export')}
+            onClick={() => setActiveTab('validacion')}
             className={`px-6 py-3 font-semibold transition-all border-b-2 ${
-              activeTab === 'import-export'
+              activeTab === 'validacion'
                 ? 'border-blue-500 text-blue-400'
                 : 'border-transparent text-slate-400 hover:text-slate-300'
             }`}
           >
-            Importar/Exportar
+            Validación
           </button>
         </div>
 
         {/* Tabs - Mobile (Vertical Scroll) */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 flex gap-2 p-4 bg-slate-900/95 border-t border-slate-700 z-50">
           <button
-            onClick={() => setActiveTab('stages')}
+            onClick={() => setActiveTab('configuracion')}
             className={`flex-1 px-3 py-2 font-semibold transition-all border-b-2 text-sm ${
-              activeTab === 'stages'
+              activeTab === 'configuracion'
                 ? 'border-blue-500 text-blue-400'
                 : 'border-transparent text-slate-400 hover:text-slate-300'
             }`}
           >
-            Configuraciones
+            Configuración
           </button>
           <button
-            onClick={() => setActiveTab('tolerance')}
+            onClick={() => setActiveTab('mediciones')}
             className={`flex-1 px-3 py-2 font-semibold transition-all border-b-2 text-sm ${
-              activeTab === 'tolerance'
+              activeTab === 'mediciones'
                 ? 'border-blue-500 text-blue-400'
                 : 'border-transparent text-slate-400 hover:text-slate-300'
             }`}
           >
-            Tolerancias
+            Mediciones
           </button>
           <button
-            onClick={() => setActiveTab('import-export')}
+            onClick={() => setActiveTab('validacion')}
             className={`flex-1 px-3 py-2 font-semibold transition-all border-b-2 text-sm ${
-              activeTab === 'import-export'
+              activeTab === 'validacion'
                 ? 'border-blue-500 text-blue-400'
                 : 'border-transparent text-slate-400 hover:text-slate-300'
             }`}
           >
-            Importar/Exportar
+            Validación
           </button>
         </div>
         
         {/* Mobile Content Padding */}
         <div className="md:hidden pb-24"></div>
 
-        {/* Stages Tab */}
-        {activeTab === 'stages' && (
+        {/* Configuración Tab */}
+        {activeTab === 'configuracion' && (
           <div className="space-y-8 md:space-y-8">
             {hincasData.stages.map((stage) => (
               <div key={stage.id} className="space-y-4">
@@ -510,8 +510,8 @@ export default function Admin() {
           </div>
         )}
 
-        {/* Tolerance Tab */}
-        {activeTab === 'tolerance' && (
+        {/* Mediciones Tab */}
+        {activeTab === 'mediciones' && (
           <div className="space-y-6">
             <Card className="bg-slate-800 border-slate-700 p-8">
               <h2 className="text-2xl font-bold text-white mb-8">Configurar Tolerancias</h2>
@@ -578,8 +578,8 @@ export default function Admin() {
           </div>
         )}
 
-        {/* Import/Export Tab */}
-        {activeTab === 'import-export' && (
+        {/* Validación Tab */}
+        {activeTab === 'validacion' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Export */}
             <Card className="bg-slate-800 border-slate-700 p-6 lg:col-span-1">
