@@ -293,11 +293,11 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
+      <div className="max-w-7xl mx-auto w-full overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+          <div className="flex items-center gap-2 md:gap-4 flex-wrap">
             <Link href="/">
               <Button
                 variant="outline"
@@ -308,8 +308,8 @@ export default function Admin() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-4xl font-bold text-white">Panel de Administración</h1>
-              <p className="text-slate-400 text-sm mt-1">Gestiona configuraciones, tolerancias e importa/exporta datos</p>
+              <h1 className="text-2xl md:text-4xl font-bold text-white">Panel de Administración</h1>
+              <p className="text-slate-400 text-xs md:text-sm mt-1">Gestiona configuraciones, tolerancias e importa/exporta datos</p>
             </div>
           </div>
         </div>
@@ -326,10 +326,10 @@ export default function Admin() {
         )}
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-8 border-b border-slate-700">
+        <div className="flex gap-1 md:gap-2 mb-8 border-b border-slate-700 overflow-x-auto">
           <button
             onClick={() => setActiveTab('stages')}
-            className={`px-6 py-3 font-semibold transition-all border-b-2 ${
+            className={`px-3 md:px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap text-sm md:text-base ${
               activeTab === 'stages'
                 ? 'border-blue-500 text-blue-400'
                 : 'border-transparent text-slate-400 hover:text-slate-300'
@@ -339,7 +339,7 @@ export default function Admin() {
           </button>
           <button
             onClick={() => setActiveTab('tolerance')}
-            className={`px-6 py-3 font-semibold transition-all border-b-2 ${
+            className={`px-3 md:px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap text-sm md:text-base ${
               activeTab === 'tolerance'
                 ? 'border-blue-500 text-blue-400'
                 : 'border-transparent text-slate-400 hover:text-slate-300'
@@ -349,7 +349,7 @@ export default function Admin() {
           </button>
           <button
             onClick={() => setActiveTab('import-export')}
-            className={`px-6 py-3 font-semibold transition-all border-b-2 ${
+            className={`px-3 md:px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap text-sm md:text-base ${
               activeTab === 'import-export'
                 ? 'border-blue-500 text-blue-400'
                 : 'border-transparent text-slate-400 hover:text-slate-300'
@@ -360,8 +360,7 @@ export default function Admin() {
         </div>
 
         {/* Stages Tab */}
-        {activeTab === 'stages' && (
-          <div className="space-y-8 animate-in fade-in duration-200">
+        <div key="stages-tab" style={{ display: activeTab === 'stages' ? 'block' : 'none' }} className="space-y-8 animate-in fade-in duration-200">
             {hincasData.stages.map((stage) => (
               <div key={stage.id} className="space-y-4">
                 <h2 className="text-2xl font-bold text-white px-2">{stage.name}</h2>
@@ -469,12 +468,10 @@ export default function Admin() {
                 </Button>
               </div>
             ))}
-          </div>
-        )}
+        </div>
 
         {/* Tolerance Tab */}
-        {activeTab === 'tolerance' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
+        <div key="tolerance-tab" style={{ display: activeTab === 'tolerance' ? 'block' : 'none' }} className="space-y-6 animate-in fade-in duration-200">
             <Card className="bg-slate-800 border-slate-700 p-8">
               <h2 className="text-2xl font-bold text-white mb-8">Configurar Tolerancias</h2>
               
@@ -537,12 +534,10 @@ export default function Admin() {
                 </p>
               </div>
             </Card>
-          </div>
-        )}
+        </div>
 
         {/* Import/Export Tab */}
-        {activeTab === 'import-export' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in duration-200">
+        <div key="import-export-tab" style={{ display: activeTab === 'import-export' ? 'grid' : 'none' }} className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in duration-200">
             {/* Export */}
             <Card className="bg-slate-800 border-slate-700 p-6 lg:col-span-1">
               <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
@@ -601,8 +596,7 @@ export default function Admin() {
                 Restaurar Valores Por Defecto
               </Button>
             </Card>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );
