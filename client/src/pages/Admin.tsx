@@ -361,7 +361,7 @@ export default function Admin() {
 
         {/* Stages Tab */}
         {activeTab === 'stages' && (
-          <div className="space-y-8">
+          <div className="space-y-8 animate-in fade-in duration-200">
             {hincasData.stages.map((stage) => (
               <div key={stage.id} className="space-y-4">
                 <h2 className="text-2xl font-bold text-white px-2">{stage.name}</h2>
@@ -474,7 +474,7 @@ export default function Admin() {
 
         {/* Tolerance Tab */}
         {activeTab === 'tolerance' && (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-in fade-in duration-200">
             <Card className="bg-slate-800 border-slate-700 p-8">
               <h2 className="text-2xl font-bold text-white mb-8">Configurar Tolerancias</h2>
               
@@ -542,7 +542,7 @@ export default function Admin() {
 
         {/* Import/Export Tab */}
         {activeTab === 'import-export' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in duration-200">
             {/* Export */}
             <Card className="bg-slate-800 border-slate-700 p-6 lg:col-span-1">
               <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
