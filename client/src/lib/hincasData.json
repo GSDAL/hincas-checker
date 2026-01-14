@@ -7,44 +7,44 @@
         {
           "id": "2R_EXT_162",
           "name": "2R_EXT_162",
-          "distances": [0.075, 0.075, 0.081, 0.081, 0.079, 0.093, 0.0805, 0.0805, 0.0805, 0.085, 0.085],
-          "totalDistance": 0.8955
+          "distances": [7.5, 7.5, 8.1, 8.1, 7.9, 9.3, 8.05, 8.05, 8.05, 8.5, 8.5],
+          "totalDistance": 89.55
         },
         {
           "id": "2R_MED1PN_162",
           "name": "2R_MED1PN_162",
-          "distances": [0.0915, 0.0915, 0.104, 0.104, 0.1025, 0.105, 0.103, 0.0925, 0.0925],
-          "totalDistance": 0.8865
+          "distances": [9.15, 9.15, 10.4, 10.4, 10.25, 10.5, 10.3, 9.25, 9.25],
+          "totalDistance": 88.65
         },
         {
           "id": "2R_MED1PS_162",
           "name": "2R_MED1PS_162",
-          "distances": [0.0925, 0.0925, 0.103, 0.103, 0.1045, 0.104, 0.104, 0.0915, 0.0915],
-          "totalDistance": 0.8865
+          "distances": [9.25, 9.25, 10.3, 10.3, 10.45, 10.4, 10.4, 9.15, 9.15],
+          "totalDistance": 88.65
         },
         {
           "id": "2R_INT1PN_162",
           "name": "2R_INT1PN_162",
-          "distances": [0.0915, 0.0915, 0.104, 0.104, 0.102, 0.105, 0.103, 0.0925, 0.0925],
-          "totalDistance": 0.886
+          "distances": [9.15, 9.15, 10.4, 10.4, 10.2, 10.5, 10.3, 9.25, 9.25],
+          "totalDistance": 88.6
         },
         {
           "id": "2R_INT1PS_162",
           "name": "2R_INT1PS_162",
-          "distances": [0.0925, 0.0925, 0.103, 0.103, 0.1045, 0.104, 0.104, 0.0915, 0.0915],
-          "totalDistance": 0.8865
+          "distances": [9.25, 9.25, 10.3, 10.3, 10.45, 10.4, 10.4, 9.15, 9.15],
+          "totalDistance": 88.65
         },
         {
           "id": "2R_MED2P_162",
           "name": "2R_MED2P_162",
-          "distances": [0.0925, 0.0925, 0.103, 0.103, 0.1045, 0.104, 0.104, 0.0915, 0.0915],
-          "totalDistance": 0.8865
+          "distances": [9.25, 9.25, 10.3, 10.3, 10.45, 10.4, 10.4, 9.15, 9.15],
+          "totalDistance": 88.65
         },
         {
           "id": "2R_INT2P_162",
           "name": "2R_INT2P_162",
-          "distances": [0.0925, 0.0925, 0.103, 0.103, 0.1045, 0.104, 0.104, 0.0915, 0.0915],
-          "totalDistance": 0.8865
+          "distances": [9.25, 9.25, 10.3, 10.3, 10.45, 10.4, 10.4, 9.15, 9.15],
+          "totalDistance": 88.65
         }
       ]
     },
@@ -55,44 +55,44 @@
         {
           "id": "2R_EXT_108",
           "name": "2R_EXT_108",
-          "distances": [0.079, 0.093, 0.0805, 0.0805, 0.0805, 0.0805, 0.0805],
-          "totalDistance": 0.5745
+          "distances": [7.9, 9.3, 8.05, 8.05, 8.05, 8.05, 8.05],
+          "totalDistance": 57.45
         },
         {
           "id": "2R_MED1PN_108",
           "name": "2R_MED1PN_108",
-          "distances": [0.0915, 0.0915, 0.104, 0.104, 0.0905, 0.093],
-          "totalDistance": 0.5745
+          "distances": [9.15, 9.15, 10.4, 10.4, 9.05, 9.3],
+          "totalDistance": 57.45
         },
         {
           "id": "2R_MED1PS_108",
           "name": "2R_MED1PS_108",
-          "distances": [0.091, 0.0925, 0.104, 0.1044, 0.0915, 0.0915],
-          "totalDistance": 0.5749
+          "distances": [9.1, 9.25, 10.4, 10.44, 9.15, 9.15],
+          "totalDistance": 57.49
         },
         {
           "id": "2R_INT1PN_108",
           "name": "2R_INT1PN_108",
-          "distances": [0.0915, 0.0915, 0.104, 0.104, 0.0905, 0.093],
-          "totalDistance": 0.5745
+          "distances": [9.15, 9.15, 10.4, 10.4, 9.05, 9.3],
+          "totalDistance": 57.45
         },
         {
           "id": "2R_INT1PS_108",
           "name": "2R_INT1PS_108",
-          "distances": [0.091, 0.0925, 0.104, 0.104, 0.0915, 0.0915],
-          "totalDistance": 0.5745
+          "distances": [9.1, 9.25, 10.4, 10.4, 9.15, 9.15],
+          "totalDistance": 57.45
         },
         {
           "id": "2R_MED2P_108",
           "name": "2R_MED2P_108",
-          "distances": [0.091, 0.0925, 0.104, 0.104, 0.0915, 0.0915],
-          "totalDistance": 0.5745
+          "distances": [9.1, 9.25, 10.4, 10.4, 9.15, 9.15],
+          "totalDistance": 57.45
         },
         {
           "id": "2R_INT2P_108",
           "name": "2R_INT2P_108",
-          "distances": [0.091, 0.0925, 0.104, 0.104, 0.0915, 0.0915],
-          "totalDistance": 0.5745
+          "distances": [9.1, 9.25, 10.4, 10.4, 9.15, 9.15],
+          "totalDistance": 57.45
         }
       ]
     },
@@ -103,32 +103,32 @@
         {
           "id": "2R_EXT_54",
           "name": "2R_EXT_54",
-          "distances": [0.082, 0.069, 0.069, 0.069],
-          "totalDistance": 0.289
+          "distances": [8.2, 6.9, 6.9, 6.9],
+          "totalDistance": 28.9
         },
         {
           "id": "2R_INT_54",
           "name": "2R_INT_54",
-          "distances": [0.103, 0.093, 0.093],
-          "totalDistance": 0.289
+          "distances": [10.3, 9.3, 9.3],
+          "totalDistance": 28.9
         },
         {
           "id": "2R_MED1PN_54",
           "name": "2R_MED1PN_54",
-          "distances": [0.093, 0.093, 0.101],
-          "totalDistance": 0.287
+          "distances": [9.3, 9.3, 10.1],
+          "totalDistance": 28.7
         },
         {
           "id": "2R_MED1PS_54",
           "name": "2R_MED1PS_54",
-          "distances": [0.103, 0.093, 0.093],
-          "totalDistance": 0.289
+          "distances": [10.3, 9.3, 9.3],
+          "totalDistance": 28.9
         },
         {
           "id": "2R_MED2P_54",
           "name": "2R_MED2P_54",
-          "distances": [0.103, 0.093, 0.093],
-          "totalDistance": 0.289
+          "distances": [10.3, 9.3, 9.3],
+          "totalDistance": 28.9
         }
       ]
     }
