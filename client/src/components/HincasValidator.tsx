@@ -105,7 +105,9 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
       const measured = measurements[index];
       if (measured !== null && measured !== undefined) {
         const difference = measured - expected;
-        const isValid = Math.abs(difference) <= hincasData.tolerance.individual;
+        // Redondear a 4 decimales para evitar errores de precisión de punto flotante
+        const roundedDifference = Math.round(Math.abs(difference) * 10000) / 10000;
+        const isValid = roundedDifference <= hincasData.tolerance.individual;
         results.push({
           index,
           expected,
@@ -124,7 +126,9 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
       return null;
     }
     const difference = calculatedTotal - currentConfig.totalDistance;
-    const isValid = Math.abs(difference) <= hincasData.tolerance.total;
+    // Redondear a 4 decimales para evitar errores de precisión de punto flotante
+    const roundedDifference = Math.round(Math.abs(difference) * 10000) / 10000;
+    const isValid = roundedDifference <= hincasData.tolerance.total;
     return {
       expected: currentConfig.totalDistance,
       measured: calculatedTotal,
