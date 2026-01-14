@@ -136,7 +136,7 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
                    (totalValidation === null || totalValidation.isValid);
 
   const handleValidate = () => {
-    if (allValid && totalValidation && calculatedTotal !== null) {
+    if (totalValidation && calculatedTotal !== null && validationResults.length > 0) {
       const entry: HistoryEntry = {
         id: Date.now().toString(),
         timestamp: new Date().toLocaleString('es-ES'),
@@ -400,7 +400,7 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
                 <div className="flex gap-2 mt-6">
                   <Button
                     onClick={handleValidate}
-                    disabled={!allValid || calculatedTotal === null}
+                    disabled={calculatedTotal === null || validationResults.length === 0}
                     className="flex-1 bg-slate-900 hover:bg-slate-800 text-white disabled:bg-slate-400"
                   >
                     Validar
