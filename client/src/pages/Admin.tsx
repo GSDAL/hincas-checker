@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Trash2, Save, Download, Upload, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Save, Download, Upload, ArrowLeft, Edit2, Check, X } from 'lucide-react';
 import defaultHincasData from '@/lib/hincasData.json';
 import { Link } from 'wouter';
 
@@ -122,15 +122,13 @@ export default function Admin() {
   const handleAddConfiguration = (stageId: string) => {
     const newData = JSON.parse(JSON.stringify(hincasData));
     const stage = newData.stages.find((s: Stage) => s.id === stageId);
-    
     if (stage) {
-      const newConfigId = `${stageId}_NEW_${Date.now()}`;
       const newConfig: Configuration = {
-        id: newConfigId,
-        name: `Nueva Configuración ${stage.configurations.length + 1}`,
-        color: '#' + Math.floor(Math.random() * 16777215).toString(16),
-        distances: Array(11).fill(0),
-        totalDistance: 0
+        id: `config_${Date.now()}`,
+        name: `Nueva Configuración`,
+        color: '#3b82f6',
+        distances: Array(8).fill(0),
+        totalDistance: 0,
       };
       stage.configurations.push(newConfig);
       setHincasData(newData);
@@ -295,98 +293,117 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <Link href="/">
               <Button
                 variant="outline"
-                className="border-slate-300"
+                className="border-slate-600 text-slate-200 hover:bg-slate-700"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Volver
               </Button>
             </Link>
-            <h1 className="text-4xl font-bold text-slate-900">Panel de Administración</h1>
+            <div>
+              <h1 className="text-4xl font-bold text-white">Panel de Administración</h1>
+              <p className="text-slate-400 text-sm mt-1">Gestiona configuraciones, tolerancias e importa/exporta datos</p>
+            </div>
           </div>
         </div>
 
+        {/* Message Alert */}
         {message && (
-          <Card className={`p-4 mb-6 border-l-4 ${
+          <Card className={`p-4 mb-6 border-l-4 backdrop-blur-sm ${
             message.type === 'success'
-              ? 'bg-green-50 border-l-green-500'
-              : 'bg-red-50 border-l-red-500'
+              ? 'bg-emerald-950/50 border-l-emerald-500 text-emerald-200'
+              : 'bg-red-950/50 border-l-red-500 text-red-200'
           }`}>
-            <p className={message.type === 'success' ? 'text-green-700' : 'text-red-700'}>
-              {message.text}
-            </p>
+            <p className="font-medium">{message.text}</p>
           </Card>
         )}
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6">
-          <Button
+        <div className="flex gap-2 mb-8 border-b border-slate-700">
+          <button
             onClick={() => setActiveTab('stages')}
-            variant={activeTab === 'stages' ? 'default' : 'outline'}
-            className={activeTab === 'stages' ? 'bg-blue-600 hover:bg-blue-700' : 'border-slate-300'}
+            className={`px-6 py-3 font-semibold transition-all border-b-2 ${
+              activeTab === 'stages'
+                ? 'border-blue-500 text-blue-400'
+                : 'border-transparent text-slate-400 hover:text-slate-300'
+            }`}
           >
             Configuraciones
-          </Button>
-          <Button
+          </button>
+          <button
             onClick={() => setActiveTab('tolerance')}
-            variant={activeTab === 'tolerance' ? 'default' : 'outline'}
-            className={activeTab === 'tolerance' ? 'bg-blue-600 hover:bg-blue-700' : 'border-slate-300'}
+            className={`px-6 py-3 font-semibold transition-all border-b-2 ${
+              activeTab === 'tolerance'
+                ? 'border-blue-500 text-blue-400'
+                : 'border-transparent text-slate-400 hover:text-slate-300'
+            }`}
           >
             Tolerancias
-          </Button>
-          <Button
+          </button>
+          <button
             onClick={() => setActiveTab('import-export')}
-            variant={activeTab === 'import-export' ? 'default' : 'outline'}
-            className={activeTab === 'import-export' ? 'bg-blue-600 hover:bg-blue-700' : 'border-slate-300'}
+            className={`px-6 py-3 font-semibold transition-all border-b-2 ${
+              activeTab === 'import-export'
+                ? 'border-blue-500 text-blue-400'
+                : 'border-transparent text-slate-400 hover:text-slate-300'
+            }`}
           >
             Importar/Exportar
-          </Button>
+          </button>
         </div>
 
         {/* Stages Tab */}
         {activeTab === 'stages' && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {hincasData.stages.map((stage) => (
-              <Card key={stage.id} className="p-6 border-slate-200 shadow-sm">
-                <h2 className="text-2xl font-bold text-slate-900 mb-4">{stage.name}</h2>
-
-                <div className="space-y-4">
+              <div key={stage.id} className="space-y-4">
+                <h2 className="text-2xl font-bold text-white px-2">{stage.name}</h2>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {stage.configurations.map((config) => (
-                    <Card key={config.id} className="p-4 border-slate-200 bg-slate-50">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="color"
-                            value={config.color}
-                            onChange={(e) => handleUpdateConfigColor(stage.id, config.id, e.target.value)}
-                            className="w-10 h-10 rounded cursor-pointer"
-                          />
-                          <input
-                            type="text"
-                            value={config.name}
-                            onChange={(e) => handleUpdateConfigName(stage.id, config.id, e.target.value)}
-                            className="px-3 py-2 border border-slate-300 rounded font-medium text-slate-900"
-                          />
-                        </div>
+                    <Card key={config.id} className="bg-slate-800 border-slate-700 p-6 hover:border-slate-600 transition-colors">
+                      {/* Config Header */}
+                      <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-700">
+                        <div
+                          className="w-8 h-8 rounded-lg border-2 border-slate-600 cursor-pointer hover:border-slate-500 transition-colors"
+                          style={{ backgroundColor: config.color }}
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'color';
+                            input.value = config.color;
+                            input.onchange = (e: any) => handleUpdateConfigColor(stage.id, config.id, e.target.value);
+                            input.click();
+                          }}
+                          title="Haz clic para cambiar color"
+                        />
+                        <input
+                          type="text"
+                          value={config.name}
+                          onChange={(e) => handleUpdateConfigName(stage.id, config.id, e.target.value)}
+                          className="flex-1 bg-slate-700 text-white px-3 py-2 rounded border border-slate-600 focus:border-blue-500 focus:outline-none font-semibold"
+                        />
                         <Button
                           onClick={() => handleDeleteConfiguration(stage.id, config.id)}
                           variant="destructive"
                           size="sm"
+                          className="bg-red-900 hover:bg-red-800 text-red-100"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3 mb-4">
+                      {/* Distances Grid */}
+                      <div className="space-y-3 mb-6">
                         {config.distances.map((distance, idx) => (
-                          <div key={idx} className="flex items-center gap-2">
-                            <label className="text-sm font-medium text-slate-700 w-16">Hinc {idx + 1}:</label>
+                          <div key={idx} className="flex items-center gap-3">
+                            <span className="text-sm font-medium text-slate-400 w-20">Hinc {idx + 1}:</span>
                             {editingStageId === stage.id && editingConfigId === config.id && editingDistanceIndex === idx ? (
                               <div className="flex gap-2 flex-1">
                                 <Input
@@ -394,156 +411,194 @@ export default function Admin() {
                                   step="0.01"
                                   value={tempValue}
                                   onChange={(e) => setTempValue(e.target.value)}
-                                  className="flex-1 border-slate-300"
+                                  className="flex-1 bg-slate-700 border-slate-600 text-white"
                                   autoFocus
                                 />
                                 <Button
                                   onClick={handleSaveDistance}
                                   size="sm"
-                                  className="bg-green-600 hover:bg-green-700"
+                                  className="bg-green-700 hover:bg-green-600"
                                 >
-                                  <Save className="w-4 h-4" />
+                                  <Check className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  onClick={() => {
+                                    setEditingStageId(null);
+                                    setEditingConfigId(null);
+                                    setEditingDistanceIndex(null);
+                                  }}
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-slate-600 text-slate-300"
+                                >
+                                  <X className="w-4 h-4" />
                                 </Button>
                               </div>
                             ) : (
                               <button
                                 onClick={() => handleEditDistance(stage.id, config.id, idx)}
-                                className="flex-1 px-3 py-2 border border-slate-300 rounded text-right font-mono text-slate-900 hover:bg-white cursor-pointer"
+                                className="flex-1 text-right px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded border border-slate-600 text-white font-mono transition-colors group flex items-center justify-between"
                               >
-                                {distance.toFixed(4)} m
+                                <span>{distance.toFixed(4)} m</span>
+                                <Edit2 className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                               </button>
                             )}
                           </div>
                         ))}
                       </div>
 
-                      <div className="border-t border-slate-300 pt-3">
+                      {/* Total */}
+                      <div className="pt-4 border-t border-slate-700">
                         <div className="flex justify-between items-center">
-                          <span className="font-semibold text-slate-900">Total:</span>
-                          <span className="font-mono font-bold text-lg text-slate-900">{config.totalDistance.toFixed(4)} m</span>
+                          <span className="text-sm font-medium text-slate-400">Total:</span>
+                          <span className="text-lg font-bold text-blue-400">{config.totalDistance.toFixed(4)} m</span>
                         </div>
                       </div>
                     </Card>
                   ))}
-
-                  <Button
-                    onClick={() => handleAddConfiguration(stage.id)}
-                    variant="outline"
-                    className="w-full border-dashed border-slate-300 text-slate-700 hover:bg-slate-100"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Agregar Nueva Configuración
-                  </Button>
                 </div>
-              </Card>
+
+                {/* Add Configuration Button */}
+                <Button
+                  onClick={() => handleAddConfiguration(stage.id)}
+                  className="w-full bg-slate-700 hover:bg-slate-600 text-white border border-slate-600"
+                  variant="outline"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Agregar Nueva Configuración
+                </Button>
+              </div>
             ))}
           </div>
         )}
 
         {/* Tolerance Tab */}
         {activeTab === 'tolerance' && (
-          <Card className="p-6 border-slate-200 shadow-sm">
-            <h2 className="text-2xl font-bold text-slate-900 mb-6">Configurar Tolerancias</h2>
+          <div className="space-y-6">
+            <Card className="bg-slate-800 border-slate-700 p-8">
+              <h2 className="text-2xl font-bold text-white mb-8">Configurar Tolerancias</h2>
+              
+              <div className="space-y-8">
+                {/* Individual Tolerance */}
+                <div className="space-y-3">
+                  <label className="block text-sm font-semibold text-slate-300">
+                    Tolerancia Individual (m)
+                  </label>
+                  <p className="text-sm text-slate-400">Tolerancia máxima permitida para cada medición individual</p>
+                  <div className="flex items-end gap-4">
+                    <div className="flex-1">
+                      <Input
+                        type="number"
+                        step="0.0001"
+                        value={hincasData.tolerance.individual}
+                        onChange={(e) => handleUpdateTolerance('individual', e.target.value)}
+                        className="bg-slate-700 border-slate-600 text-white text-lg font-mono"
+                      />
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-slate-400">Rango actual:</p>
+                      <p className="text-lg font-bold text-blue-400">
+                        ±{hincasData.tolerance.individual.toFixed(4)} m
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-            <div className="space-y-6 max-w-md">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Tolerancia Individual (m)
-                </label>
-                <p className="text-xs text-slate-600 mb-2">
-                  Tolerancia máxima permitida para cada medición individual
-                </p>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    step="0.01"
-                    defaultValue={hincasData.tolerance.individual}
-                    onBlur={(e) => handleUpdateTolerance('individual', e.target.value)}
-                    className="border-slate-300"
-                  />
-                  <span className="text-slate-600 font-mono self-center">±{hincasData.tolerance.individual.toFixed(4)} m</span>
+                {/* Total Tolerance */}
+                <div className="space-y-3 pt-6 border-t border-slate-700">
+                  <label className="block text-sm font-semibold text-slate-300">
+                    Tolerancia Total (m)
+                  </label>
+                  <p className="text-sm text-slate-400">Tolerancia máxima permitida para la suma total de mediciones</p>
+                  <div className="flex items-end gap-4">
+                    <div className="flex-1">
+                      <Input
+                        type="number"
+                        step="0.0001"
+                        value={hincasData.tolerance.total}
+                        onChange={(e) => handleUpdateTolerance('total', e.target.value)}
+                        className="bg-slate-700 border-slate-600 text-white text-lg font-mono"
+                      />
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-slate-400">Rango actual:</p>
+                      <p className="text-lg font-bold text-blue-400">
+                        ±{hincasData.tolerance.total.toFixed(4)} m
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Tolerancia Total (m)
-                </label>
-                <p className="text-xs text-slate-600 mb-2">
-                  Tolerancia máxima permitida para la suma total de mediciones
-                </p>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    step="0.01"
-                    defaultValue={hincasData.tolerance.total}
-                    onBlur={(e) => handleUpdateTolerance('total', e.target.value)}
-                    className="border-slate-300"
-                  />
-                  <span className="text-slate-600 font-mono self-center">±{hincasData.tolerance.total.toFixed(4)} m</span>
-                </div>
-              </div>
-
-              <div className="border-t border-slate-200 pt-4">
-                <p className="text-sm text-slate-600 mb-3">
-                  <strong>Nota:</strong> La validación es estricta: si CUALQUIER medición individual O el total está fuera de tolerancia, el registro es INVÁLIDO.
+              {/* Info Box */}
+              <div className="mt-8 p-4 bg-blue-950/50 border border-blue-800 rounded-lg">
+                <p className="text-sm text-blue-200">
+                  <span className="font-semibold">ℹ️ Nota:</span> La validación es estricta: CUALQUIER medición individual O el total está fuera de tolerancia, el registro es INVÁLIDO.
                 </p>
               </div>
-            </div>
-          </Card>
+            </Card>
+          </div>
         )}
 
         {/* Import/Export Tab */}
         {activeTab === 'import-export' && (
-          <div className="space-y-4">
-            <Card className="p-6 border-slate-200 shadow-sm">
-              <h2 className="text-2xl font-bold text-slate-900 mb-4">Exportar Configuración</h2>
-              <p className="text-slate-600 mb-4">
-                Descarga tu configuración actual como archivo JSON para hacer backup o compartir
-              </p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Export */}
+            <Card className="bg-slate-800 border-slate-700 p-6 lg:col-span-1">
+              <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <Download className="w-5 h-5 text-blue-400" />
+                Exportar
+              </h3>
+              <p className="text-sm text-slate-400 mb-4">Descarga tu configuración actual como archivo JSON para hacer backup o compartir</p>
               <Button
                 onClick={handleExportData}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <Download className="w-4 h-4 mr-2" />
                 Descargar Configuración
               </Button>
             </Card>
 
-            <Card className="p-6 border-slate-200 shadow-sm">
-              <h2 className="text-2xl font-bold text-slate-900 mb-4">Importar Configuración</h2>
-              <p className="text-slate-600 mb-4">
-                Carga una configuración guardada anteriormente
-              </p>
-              <div className="flex gap-2">
+            {/* Import */}
+            <Card className="bg-slate-800 border-slate-700 p-6 lg:col-span-1">
+              <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <Upload className="w-5 h-5 text-green-400" />
+                Importar
+              </h3>
+              <p className="text-sm text-slate-400 mb-4">Carga una configuración guardada anteriormente</p>
+              <label className="block">
                 <input
                   type="file"
                   accept=".json"
                   onChange={handleImportData}
                   className="hidden"
-                  id="import-file"
                 />
                 <Button
-                  onClick={() => document.getElementById('import-file')?.click()}
-                  className="bg-green-600 hover:bg-green-700 cursor-pointer"
+                  onClick={(e) => {
+                    const input = e.currentTarget.parentElement?.querySelector('input[type="file"]') as HTMLInputElement;
+                    input?.click();
+                  }}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
                 >
                   <Upload className="w-4 h-4 mr-2" />
                   Seleccionar Archivo
                 </Button>
-              </div>
+              </label>
             </Card>
 
-            <Card className="p-6 border-slate-200 shadow-sm border-red-200 bg-red-50">
-              <h2 className="text-2xl font-bold text-red-900 mb-4">Restaurar Valores Por Defecto</h2>
-              <p className="text-red-700 mb-4">
-                Esto eliminará todos los cambios y restaurará la configuración original
-              </p>
+            {/* Reset */}
+            <Card className="bg-slate-800 border-slate-700 p-6 lg:col-span-1">
+              <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <X className="w-5 h-5 text-red-400" />
+                Restaurar
+              </h3>
+              <p className="text-sm text-slate-400 mb-4">Vuelve a los valores originales (no se puede deshacer)</p>
               <Button
                 onClick={handleResetToDefault}
-                variant="destructive"
+                className="w-full bg-red-600 hover:bg-red-700 text-white"
               >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Restaurar Configuración Por Defecto
+                <X className="w-4 h-4 mr-2" />
+                Restaurar Valores Por Defecto
               </Button>
             </Card>
           </div>
