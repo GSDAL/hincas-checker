@@ -200,16 +200,21 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
     });
 
     const csv = [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `hincas_history_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    
+    // Crear blob y descargar
+    try {
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.href = url;
+      link.download = `hincas_history_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+    } catch (error) {
+      console.error('Error al exportar CSV:', error);
+    }
   };
 
   return (
@@ -551,6 +556,62 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
                           <div className="font-mono text-sm font-semibold">
                             Diferencia: {totalValidation.difference > 0 ? '+' : ''}{totalValidation.difference.toFixed(4)} m
                           </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Diagrama Visual de Distancias */}
+                    {measurements.some(m => m !== null) && (
+                      <div className="border-t border-slate-200 pt-4 mt-4">
+                        <h3 className="text-sm font-semibold text-slate-900 mb-3">Diagrama de Distancias</h3>
+                        <div className="bg-white p-4 rounded border border-slate-200 overflow-x-auto">
+                          <svg width="100%" height="120" viewBox="0 0 800 120" className="min-w-max">
+                            {/* Línea superior */}
+                            <line x1="20" y1="20" x2="780" y2="20" stroke="#1e293b" strokeWidth="2" />
+                            {/* Línea inferior */}
+                            <line x1="20" y1="80" x2="780" y2="80" stroke="#1e293b" strokeWidth="2" />
+                            {/* Línea izquierda */}
+                            <line x1="20" y1="20" x2="20" y2="80" stroke="#1e293b" strokeWidth="2" />
+                            {/* Línea derecha */}
+                            <line x1="780" y1="20" x2="780" y2="80" stroke="#1e293b" strokeWidth="2" />
+                            
+                            {/* Hincas y distancias */}
+                            {measurements.map((measurement, index) => {
+                              const totalWidth = 760;
+                              const numHincas = measurements.length;
+                              const hincWidth = totalWidth / numHincas;
+                              const xPos = 20 + (index + 0.5) * hincWidth;
+                              const isValid = validationResults[index]?.isValid ?? true;
+                              const fillColor = isValid ? '#10b981' : '#ef4444';
+                              
+                              return (
+                                <g key={index}>
+                                  {/* Línea vertical de hinc */}
+                                  <line x1={xPos} y1="20" x2={xPos} y2="80" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4" />
+                                  {/* Círculo de hinc */}
+                                  <circle cx={xPos} cy="50" r="6" fill={fillColor} />
+                                  {/* Etiqueta de distancia medida */}
+                                  <text x={xPos} y="105" textAnchor="middle" fontSize="11" fontFamily="monospace" fontWeight="bold" fill="#1e293b">
+                                    {measurement?.toFixed(2) || '—'}
+                                  </text>
+                                  {/* Etiqueta de diferencia */}
+                                  {validationResults[index] && (
+                                    <text x={xPos} y="115" textAnchor="middle" fontSize="9" fontFamily="monospace" fill={isValid ? '#10b981' : '#ef4444'}>
+                                      {validationResults[index].difference > 0 ? '+' : ''}{validationResults[index].difference.toFixed(3)}
+                                    </text>
+                                  )}
+                                </g>
+                              );
+                            })}
+                            
+                            {/* Total medido arriba */}
+                            <text x="400" y="15" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#1e293b">
+                              Total: {totalValidation?.measured.toFixed(2) || '—'} m
+                            </text>
+                          </svg>
+                        </div>
+                        <div className="text-xs text-slate-600 mt-2 text-center">
+                          Verde: Válido | Rojo: Fuera de tolerancia
                         </div>
                       </div>
                     )}
