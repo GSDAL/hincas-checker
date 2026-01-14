@@ -293,7 +293,7 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -325,8 +325,8 @@ export default function Admin() {
           </Card>
         )}
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-8 border-b border-slate-700">
+        {/* Tabs - Desktop */}
+        <div className="hidden md:flex gap-2 mb-8 border-b border-slate-700">
           <button
             onClick={() => setActiveTab('stages')}
             className={`px-6 py-3 font-semibold transition-all border-b-2 ${
@@ -350,6 +350,40 @@ export default function Admin() {
           <button
             onClick={() => setActiveTab('import-export')}
             className={`px-6 py-3 font-semibold transition-all border-b-2 ${
+              activeTab === 'import-export'
+                ? 'border-blue-500 text-blue-400'
+                : 'border-transparent text-slate-400 hover:text-slate-300'
+            }`}
+          >
+            Importar/Exportar
+          </button>
+        </div>
+
+        {/* Tabs - Mobile */}
+        <div className="md:hidden flex gap-2 mb-4 overflow-x-auto pb-2 border-b border-slate-700">
+          <button
+            onClick={() => setActiveTab('stages')}
+            className={`px-4 py-2 font-semibold transition-all border-b-2 whitespace-nowrap text-sm ${
+              activeTab === 'stages'
+                ? 'border-blue-500 text-blue-400'
+                : 'border-transparent text-slate-400 hover:text-slate-300'
+            }`}
+          >
+            Configuraciones
+          </button>
+          <button
+            onClick={() => setActiveTab('tolerance')}
+            className={`px-4 py-2 font-semibold transition-all border-b-2 whitespace-nowrap text-sm ${
+              activeTab === 'tolerance'
+                ? 'border-blue-500 text-blue-400'
+                : 'border-transparent text-slate-400 hover:text-slate-300'
+            }`}
+          >
+            Tolerancias
+          </button>
+          <button
+            onClick={() => setActiveTab('import-export')}
+            className={`px-4 py-2 font-semibold transition-all border-b-2 whitespace-nowrap text-sm ${
               activeTab === 'import-export'
                 ? 'border-blue-500 text-blue-400'
                 : 'border-transparent text-slate-400 hover:text-slate-300'
