@@ -28,6 +28,7 @@ interface HistoryEntry {
     difference: number;
     isValid: boolean;
   };
+  description?: string;
 }
 
 interface HincasValidatorProps {
@@ -40,6 +41,7 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
   const [measurements, setMeasurements] = useState<(number | null)[]>([]);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [description, setDescription] = useState<string>('');
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -136,6 +138,12 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
                    (totalValidation === null || totalValidation.isValid);
 
   const handleValidate = () => {
+    if (onValidationComplete) {
+      onValidationComplete(validationResults);
+    }
+  };
+
+  const handleSaveToHistory = () => {
     if (totalValidation && calculatedTotal !== null && validationResults.length > 0) {
       const entry: HistoryEntry = {
         id: Date.now().toString(),
@@ -145,13 +153,12 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
         measurements: measurements as number[],
         total: calculatedTotal,
         results: validationResults,
-        totalValidation
+        totalValidation,
+        description: description || undefined
       };
       setHistory([entry, ...history]);
       setMeasurements([]);
-    }
-    if (onValidationComplete) {
-      onValidationComplete(validationResults);
+      setDescription('');
     }
   };
 
@@ -166,7 +173,7 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
   const handleExportCSV = () => {
     if (history.length === 0) return;
 
-    const headers = ['Fecha/Hora', 'Stage', 'Configuración', 'Hinc 1', 'Hinc 2', 'Hinc 3', 'Hinc 4', 'Hinc 5', 'Hinc 6', 'Hinc 7', 'Hinc 8', 'Hinc 9', 'Hinc 10', 'Hinc 11', 'Total Medido', 'Total Esperado', 'Diferencia Total', 'Estado'];
+    const headers = ['Fecha/Hora', 'Stage', 'Configuración', 'Hinc 1', 'Hinc 2', 'Hinc 3', 'Hinc 4', 'Hinc 5', 'Hinc 6', 'Hinc 7', 'Hinc 8', 'Hinc 9', 'Hinc 10', 'Hinc 11', 'Total Medido', 'Total Esperado', 'Diferencia Total', 'Estado', 'Descripción'];
     const rows = history.map(entry => {
       const hincValues = Array(11).fill('').map((_, i) => entry.measurements[i]?.toFixed(4) || '');
       return [
@@ -177,7 +184,8 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
         entry.total.toFixed(4),
         entry.totalValidation.expected.toFixed(4),
         entry.totalValidation.difference.toFixed(4),
-        entry.totalValidation.isValid ? 'Válido' : 'Inválido'
+        entry.totalValidation.isValid ? 'Válido' : 'Inválido',
+        entry.description ? `"${entry.description}"` : ''
       ].join(',');
     });
 
@@ -282,6 +290,21 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
                       <div className="font-mono text-sm space-y-1">
                         <div>Total: {entry.total.toFixed(4)} m (Esperado: {entry.totalValidation.expected.toFixed(4)} m)</div>
                         <div>Diferencia: {entry.totalValidation.difference > 0 ? '+' : ''}{entry.totalValidation.difference.toFixed(4)} m</div>
+                        {entry.description && (
+                          <div className="mt-2 p-2 bg-slate-100 rounded text-slate-700 text-xs italic">
+                            "{entry.description}"
+                          </div>
+                        )}
+                        <div className="mt-2 text-xs text-slate-600 max-h-20 overflow-y-auto">
+                          <div className="font-semibold mb-1">Mediciones:</div>
+                          <div className="grid grid-cols-2 gap-1">
+                            {entry.measurements.map((m, idx) => (
+                              <div key={idx} className="text-slate-600">
+                                Hinc {idx + 1}: {m.toFixed(4)} m
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -413,6 +436,27 @@ export default function HincasValidator({ onValidationComplete }: HincasValidato
                     Limpiar
                   </Button>
                 </div>
+
+                {validationResults.length > 0 && (
+                  <div className="mt-6 border-t border-slate-200 pt-6">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Descripción (opcional)
+                    </label>
+                    <textarea
+                      placeholder="Añade una nota o descripción para este registro..."
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      className="w-full p-2 border border-slate-300 rounded text-sm resize-none h-20 font-sans"
+                    />
+                    <Button
+                      onClick={handleSaveToHistory}
+                      disabled={calculatedTotal === null || validationResults.length === 0}
+                      className="w-full mt-3 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      Guardar en Histórico
+                    </Button>
+                  </div>
+                )}
               </Card>
             </div>
 
