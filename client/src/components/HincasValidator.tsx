@@ -35,15 +35,16 @@ interface HistoryEntry {
 
 interface HincasValidatorProps {
   onValidationComplete?: (results: ValidationResult[]) => void;
+  initialShowHistory?: boolean;
 }
 
-export default function HincasValidator({ onValidationComplete }: HincasValidatorProps) {
+export default function HincasValidator({ onValidationComplete, initialShowHistory = false }: HincasValidatorProps) {
   const [hincasData, setHincasData] = useState(defaultHincasData);
   const [selectedStage, setSelectedStage] = useState<string>('162M');
   const [selectedConfig, setSelectedConfig] = useState<string>('2R_EXT_162');
   const [measurements, setMeasurements] = useState<(number | null)[]>([]);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
+  const [showHistory, setShowHistory] = useState(initialShowHistory);
   const [description, setDescription] = useState('');
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [exportFilter, setExportFilter] = useState<'all' | 'valid' | 'invalid'>('all');
